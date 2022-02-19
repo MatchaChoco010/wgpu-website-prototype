@@ -81,12 +81,18 @@ impl App {
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_preferred_format(&adapter).unwrap(),
+            format: wgpu::TextureFormat::Bgra8Unorm,
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
         };
         surface.configure(&device, &config);
+
+        if config.format.describe().srgb {
+            log::info!("srgb");
+        } else {
+            log::info!("non-srgb");
+        }
 
         let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -186,9 +192,9 @@ impl App {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
+                            r: 0.1_f64.powf(1.0 / 2.2),
+                            g: 0.2_f64.powf(1.0 / 2.2),
+                            b: 0.3_f64.powf(1.0 / 2.2),
                             a: 1.0,
                         }),
                         store: true,
