@@ -2,6 +2,8 @@ use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEve
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
 
+use crate::resources::*;
+
 struct State {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -9,10 +11,15 @@ struct State {
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
 
+    resources_loaded: bool,
+    resources_loader: ResourcesLoader,
+    resources: Option<Resources>,
+
     egui_state: crate::egui_state::EguiState,
 
     triangle_pass: crate::pass::TrianglePass,
     egui_pass: crate::pass::EguiPass,
+    texture_pass: crate::pass::TexturePass,
 }
 impl State {
     async fn new(window: &Window) -> Self {
@@ -50,10 +57,13 @@ impl State {
         };
         surface.configure(&device, &config);
 
+        let resources_loader = ResourcesLoader::start_load(get_catalog());
+
         let egui_state = crate::egui_state::EguiState::new();
 
         let triangle_pass = crate::pass::TrianglePass::new(&device, &config);
         let egui_pass = crate::pass::EguiPass::new(window, &device, &config, size);
+        let texture_pass = crate::pass::TexturePass::new(&device);
 
         Self {
             surface,
@@ -62,10 +72,15 @@ impl State {
             config,
             size,
 
+            resources_loaded: false,
+            resources_loader,
+            resources: None,
+
             egui_state,
 
             triangle_pass,
             egui_pass,
+            texture_pass,
         }
     }
 
@@ -75,6 +90,21 @@ impl State {
 
     fn update(&mut self) {
         self.egui_pass.update();
+        self.egui_state.load_progress = self.resources_loader.progress();
+        if !self.resources_loaded && self.resources_loader.is_loaded() {
+            self.resources = Some(
+                self.resources_loader
+                    .take_resources()
+                    .unwrap_or_else(|_| panic!("Failed to get resources.")),
+            );
+            self.texture_pass.set_resources(
+                &self.device,
+                &self.queue,
+                &self.config,
+                self.resources.as_ref().unwrap(),
+            );
+            self.resources_loaded = true;
+        }
     }
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
@@ -83,9 +113,8 @@ impl State {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
+            self.egui_pass.resize(new_size);
         }
-
-        self.egui_pass.resize(new_size);
     }
 
     fn render(&mut self, window: &Window) -> Result<(), wgpu::SurfaceError> {
@@ -111,6 +140,10 @@ impl State {
             &view,
             window,
         );
+
+        if self.resources_loaded {
+            self.texture_pass.render(&mut encoder, &view);
+        }
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
@@ -192,6 +225,12 @@ impl App {
         wasm_bindgen_futures::spawn_local(self.start());
 
         #[cfg(not(target_arch = "wasm32"))]
-        pollster::block_on(self.start());
+        {
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(self.start());
+        }
     }
 }

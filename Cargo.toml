@@ -6,12 +6,15 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.53"
 bytemuck = { version="1.7.3", features = ["derive"]}
+const-fnv1a-hash = "1.0.1"
 egui = "0.16.1"
 egui_winit_platform = "0.13.0"
+futures = "0.3.21"
 image = "0.24.0"
 instant = "0.1.12"
 log = "0.4.14"
 pollster = "0.2.5"
+thiserror = "1.0.30"
 vek = "0.15.6"
 wgpu = "0.12.0"
 winit = "0.26.1"
@@ -19,6 +22,7 @@ winit = "0.26.1"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.9.0"
 egui_wgpu_backend = "0.16.0"
+tokio = { version = "1.17.0", features = ["full"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"

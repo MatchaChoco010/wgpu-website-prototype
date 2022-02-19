@@ -1,7 +1,9 @@
 mod app;
 mod egui_state;
 mod pass;
+mod resources;
 mod utils;
+
 use app::App;
 
 fn main() {

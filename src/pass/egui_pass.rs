@@ -84,6 +84,8 @@ impl EguiPass {
                     );
                     egui_state.clear_color = vek::Rgba::from(hsva.to_rgba_premultiplied());
                 });
+                ui.separator();
+                ui.add(egui::ProgressBar::new(egui_state.load_progress))
             });
         let (_output, paint_commands) = self.platform.end_frame(Some(window));
 
