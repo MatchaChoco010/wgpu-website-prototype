@@ -3,6 +3,20 @@ name = "wgpu-website-prototype"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+anyhow = "1.0.53"
+bytemuck = { version="1.7.3", features = ["derive"]}
+image = "0.24.0"
+log = "0.4.14"
+pollster = "0.2.5"
+vek = "0.15.6"
+wgpu = "0.12.0"
+winit = "0.26.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.9.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4.29"
+wasm-logger = "0.2.0"
+web-sys = "0.3.56"

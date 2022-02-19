@@ -1,0 +1,30 @@
+[tasks.help]
+script_runner = "@duckscript"
+script = """
+echo cargo make <command>
+echo \trun\t\trun native app
+echo \tbuild\t\tbuild native app
+echo \tweb\t\tbuild wasm and serve files
+echo \tweb-build\tbuild wasm
+"""
+
+[tasks.run]
+command = "cargo"
+args = ["run"]
+
+[tasks.build]
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.web]
+command = "trunk"
+args = ["serve", "--port=80"]
+env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
+
+[tasks.web-build]
+command = "trunk"
+args = ["build"]
+env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
+
+[tasks.default]
+alias = "help"
