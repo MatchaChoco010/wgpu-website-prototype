@@ -1,4 +1,7 @@
 mod app;
+mod egui_state;
+mod pass;
+mod utils;
 use app::App;
 
 fn main() {
@@ -15,10 +18,5 @@ fn main() {
     }
 
     let app = App::new();
-
-    #[cfg(target_arch = "wasm32")]
-    wasm_bindgen_futures::spawn_local(app.run());
-
-    #[cfg(not(target_arch = "wasm32"))]
-    pollster::block_on(app.run());
+    app.run();
 }
