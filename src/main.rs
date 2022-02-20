@@ -1,7 +1,7 @@
 mod app;
-mod egui_state;
 mod pass;
 mod resources;
+mod state;
 mod utils;
 
 use app::App;

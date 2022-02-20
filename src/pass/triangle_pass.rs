@@ -110,7 +110,7 @@ impl TrianglePass {
     pub fn render(
         &self,
         encoder: &mut wgpu::CommandEncoder,
-        egui_state: &crate::egui_state::EguiState,
+        clear_color: &vek::Rgba<f32>,
         view: &wgpu::TextureView,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -120,10 +120,10 @@ impl TrianglePass {
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: (egui_state.clear_color.r as f64).powf(1.0 / 2.2),
-                        g: (egui_state.clear_color.g as f64).powf(1.0 / 2.2),
-                        b: (egui_state.clear_color.b as f64).powf(1.0 / 2.2),
-                        a: (egui_state.clear_color.a as f64),
+                        r: (clear_color.r as f64).powf(1.0 / 2.2),
+                        g: (clear_color.g as f64).powf(1.0 / 2.2),
+                        b: (clear_color.b as f64).powf(1.0 / 2.2),
+                        a: (clear_color.a as f64),
                     }),
                     store: true,
                 },
