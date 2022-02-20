@@ -4,6 +4,7 @@ use crate::pass::*;
 use crate::resources::*;
 use crate::state::*;
 
+#[derive(Debug)]
 pub(super) struct LoadingState {
     pub(super) surface: wgpu::Surface,
     pub(super) device: wgpu::Device,
@@ -17,11 +18,16 @@ pub(super) struct LoadingState {
     loading_egui_pass: LoadingEguiPass,
 }
 impl LoadingState {
-    pub(super) async fn new(window: &Window) -> Self {
-        let size = window.inner_size();
+    pub(super) async fn new(
+        size: winit::dpi::PhysicalSize<u32>,
+        instance: wgpu::Instance,
+        surface: wgpu::Surface,
+        resources_loader: ResourcesLoader,
+    ) -> Self {
+        // let size = window.inner_size();
 
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let surface = unsafe { instance.create_surface(window) };
+        // let instance = wgpu::Instance::new(wgpu::Backends::all());
+        // let surface = unsafe { instance.create_surface(window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
@@ -52,8 +58,6 @@ impl LoadingState {
         };
         surface.configure(&device, &config);
 
-        let resources_loader = ResourcesLoader::start_load(get_catalog());
-
         let loading_egui_state = LoadingEguiState::new();
 
         let loading_egui_pass = LoadingEguiPass::new(&device, &config, size);
@@ -73,7 +77,7 @@ impl LoadingState {
     }
 }
 impl StateTrait for LoadingState {
-    fn update(mut self: Box<Self>) -> Box<dyn StateTrait> {
+    fn update(mut self: Box<Self>) -> Box<dyn StateTrait + Send> {
         self.loading_egui_pass.update();
         self.loading_egui_state.load_progress = self.resources_loader.progress();
         if self.resources_loader.is_loaded() {
@@ -105,7 +109,7 @@ impl StateTrait for LoadingState {
         self.size
     }
 
-    fn render(&mut self, window: &Window) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
         let view = output
@@ -123,7 +127,6 @@ impl StateTrait for LoadingState {
             &self.device,
             &self.queue,
             &view,
-            window,
             &self.loading_egui_state,
         );
 

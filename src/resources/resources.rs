@@ -1,7 +1,8 @@
-use std::{collections::HashMap, slice::SliceIndex};
+use std::collections::HashMap;
 
 use crate::resources::{Mesh, Texture};
 
+#[derive(Debug)]
 pub struct Resources {
     meshes: HashMap<u64, Mesh>,
     textures: HashMap<u64, Texture>,

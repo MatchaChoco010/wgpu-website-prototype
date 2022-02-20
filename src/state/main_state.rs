@@ -1,5 +1,3 @@
-use winit::window::Window;
-
 use crate::pass::*;
 use crate::resources::*;
 use crate::state::*;
@@ -38,6 +36,7 @@ impl MainStateViewState {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct MainState {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -91,7 +90,7 @@ impl MainState {
     }
 }
 impl StateTrait for MainState {
-    fn update(mut self: Box<Self>) -> Box<dyn StateTrait> {
+    fn update(mut self: Box<Self>) -> Box<dyn StateTrait + Send> {
         self.egui_pass.update();
         self
     }
@@ -114,7 +113,7 @@ impl StateTrait for MainState {
         self.size
     }
 
-    fn render(&mut self, window: &Window) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
         let view = output
@@ -149,7 +148,6 @@ impl StateTrait for MainState {
             &self.device,
             &self.queue,
             &view,
-            window,
         );
 
         self.queue.submit(std::iter::once(encoder.finish()));

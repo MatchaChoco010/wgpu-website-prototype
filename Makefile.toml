@@ -10,7 +10,7 @@ echo \tweb-build\tbuild wasm
 
 [tasks.run]
 command = "cargo"
-args = ["run"]
+args = ["run", "--release"]
 
 [tasks.build]
 command = "cargo"
@@ -18,7 +18,7 @@ args = ["build", "--release"]
 
 [tasks.web]
 command = "trunk"
-args = ["serve", "--port=80"]
+args = ["serve", "--port=80", "--release"]
 env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
 
 [tasks.web-build]

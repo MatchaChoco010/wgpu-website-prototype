@@ -56,6 +56,7 @@ const VERTICES: &[Vertex] = &[
     },
 ];
 
+#[derive(Debug)]
 pub struct TexturePass {
     shader: wgpu::ShaderModule,
     vertex_buffer: wgpu::Buffer,

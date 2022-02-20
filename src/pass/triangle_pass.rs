@@ -42,6 +42,7 @@ const VERTICES: &[Vertex] = &[
     },
 ];
 
+#[derive(Debug)]
 pub struct TrianglePass {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,

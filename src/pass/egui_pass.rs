@@ -1,3 +1,5 @@
+use std::fmt::{self, Debug};
+
 use egui::FontDefinitions;
 #[cfg(not(target_arch = "wasm32"))]
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
@@ -5,7 +7,6 @@ use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_wgpu_backend_old::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use instant::Instant;
-use winit::window::Window;
 
 use crate::state::*;
 
@@ -59,7 +60,6 @@ impl EguiPass {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         view: &wgpu::TextureView,
-        window: &Window,
     ) {
         self.platform.begin_frame();
 
@@ -126,14 +126,14 @@ impl EguiPass {
                     });
             }
         }
-        let (_output, paint_commands) = self.platform.end_frame(Some(window));
+        let (_output, paint_commands) = self.platform.end_frame(None);
 
         let paint_jobs = self.platform.context().tessellate(paint_commands);
 
         let screen_descriptor = ScreenDescriptor {
             physical_width: self.size.width,
             physical_height: self.size.height,
-            scale_factor: window.scale_factor() as f32,
+            scale_factor: 1.0,
         };
         self.egui_render_pass
             .update_texture(device, queue, &self.platform.context().font_image());
@@ -142,5 +142,13 @@ impl EguiPass {
         self.egui_render_pass
             .execute(encoder, &view, &paint_jobs, &screen_descriptor, None)
             .unwrap();
+    }
+}
+impl Debug for EguiPass {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LoadingEguiPass")
+            .field("start_time", &self.start_time)
+            .field("size", &self.size)
+            .finish()
     }
 }
