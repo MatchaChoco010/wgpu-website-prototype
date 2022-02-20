@@ -1,0 +1,9 @@
+[package]
+name = "step-runtime"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+futures = "0.3.21"
+instant = "0.1.12"
+uuid = { version = "0.8.2", features = ["v4", "wasm-bindgen"] }

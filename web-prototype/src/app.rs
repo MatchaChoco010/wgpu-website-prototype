@@ -1,4 +1,3 @@
-use tokio::sync::mpsc::UnboundedReceiver;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
@@ -36,38 +35,6 @@ impl App {
         }
     }
 
-    // async fn main_loop(
-    //     mut state: State,
-    //     mut event_rx: UnboundedReceiver<Option<Event<'static, ()>>>,
-    // ) {
-    //     loop {
-    //         if let Some(event) = event_rx.recv().await.unwrap() {
-    //             state.handle_event(&event);
-    //             match event {
-    //                 Event::WindowEvent { ref event, .. } => match event {
-    //                     WindowEvent::Resized(physical_size) => {
-    //                         log::error!("Resize");
-    //                         state.resize(*physical_size);
-    //                     }
-    //                     WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-    //                         state.resize(**new_inner_size);
-    //                     }
-    //                     _ => {}
-    //                 },
-    //                 Event::RedrawRequested(_) => {
-    //                     state.update();
-    //                     match state.render() {
-    //                         Ok(_) => {}
-    //                         Err(wgpu::SurfaceError::Lost) => state.resize(state.size()),
-    //                         Err(e) => eprintln!("{:?}", e),
-    //                     }
-    //                 }
-    //                 _ => {}
-    //             }
-    //         }
-    //     }
-    // }
-
     #[cfg(not(target_arch = "wasm32"))]
     pub fn run(self) {
         let App {
@@ -76,13 +43,9 @@ impl App {
             mut resources_loader,
         } = self;
 
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-        let _guard = runtime.enter();
+        let runtime = crate::runtime::Runtime::new();
 
-        resources_loader.start_load(get_catalog());
+        resources_loader.start_load(runtime.clone(), get_catalog());
 
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::Backends::all());
@@ -137,71 +100,81 @@ impl App {
 
     #[cfg(target_arch = "wasm32")]
     pub fn run(self) {
+        use instant::Duration;
+
         let App {
             event_loop,
             window,
             mut resources_loader,
         } = self;
 
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-        let _guard = runtime.enter();
+        let mut runtime = crate::runtime::Runtime::new();
+        let (event_tx, event_rx) = std::sync::mpsc::channel();
 
-        resources_loader.start_load(get_catalog());
+        resources_loader.start_load(runtime.clone(), get_catalog());
 
-        let (mut state_tx, mut state_rx) = tokio::sync::oneshot::channel::<State>();
-        let (mut event_tx, mut event_rx) =
-            tokio::sync::mpsc::unbounded_channel::<Option<Event<()>>>();
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let surface = unsafe { instance.create_surface(&window) };
 
-        wasm_bindgen_futures::spawn_local(async move {
-            let mut state = State::new(size, instance, surface, resources_loader).await;
-            event_loop.run(move |event, _, control_flow| {
-                *control_flow = ControlFlow::Wait;
-                state.handle_event(&event);
-                match &event {
-                    Event::WindowEvent {
-                        event:
-                            WindowEvent::CloseRequested
-                            | WindowEvent::KeyboardInput {
-                                input:
-                                    KeyboardInput {
-                                        state: ElementState::Pressed,
-                                        virtual_keycode: Some(VirtualKeyCode::Escape),
-                                        ..
-                                    },
-                                ..
+        runtime.spawn({
+            let runtime = runtime.clone();
+            async move {
+                let mut state = State::new(size, instance, surface, resources_loader).await;
+                loop {
+                    for event in event_rx.try_iter() {
+                        state.handle_event(&event);
+                        match &event {
+                            Event::WindowEvent { ref event, .. } => match event {
+                                WindowEvent::Resized(physical_size) => {
+                                    state.resize(*physical_size);
+                                }
+                                WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                                    state.resize(**new_inner_size);
+                                }
+                                _ => {}
                             },
-                        ..
-                    } => *control_flow = ControlFlow::Exit,
-                    Event::WindowEvent { ref event, .. } => match event {
-                        WindowEvent::Resized(physical_size) => {
-                            state.resize(*physical_size);
-                        }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            state.resize(**new_inner_size);
-                        }
-                        _ => {}
-                    },
-                    Event::RedrawRequested(_) => {
-                        state.update();
-                        match state.render() {
-                            Ok(_) => {}
-                            Err(wgpu::SurfaceError::Lost) => state.resize(state.size()),
-                            Err(wgpu::SurfaceError::OutOfMemory) => {
-                                *control_flow = ControlFlow::Exit
+                            Event::RedrawRequested(_) => {
+                                state.update();
+                                match state.render() {
+                                    Ok(_) => {}
+                                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size()),
+                                    Err(wgpu::SurfaceError::OutOfMemory) => {
+                                        // *control_flow = ControlFlow::Exit
+                                    }
+                                    Err(e) => eprintln!("{:?}", e),
+                                }
                             }
-                            Err(e) => eprintln!("{:?}", e),
+                            _ => (),
                         }
                     }
-                    Event::MainEventsCleared => window.request_redraw(),
-                    _ => (),
+                    runtime.delay(Duration::ZERO).await;
                 }
-            });
+            }
+        });
+
+        event_loop.run(move |event, _, control_flow| {
+            *control_flow = ControlFlow::Poll;
+            runtime.step();
+            match &event {
+                Event::WindowEvent {
+                    event:
+                        WindowEvent::CloseRequested
+                        | WindowEvent::KeyboardInput {
+                            input:
+                                KeyboardInput {
+                                    state: ElementState::Pressed,
+                                    virtual_keycode: Some(VirtualKeyCode::Escape),
+                                    ..
+                                },
+                            ..
+                        },
+                    ..
+                } => *control_flow = ControlFlow::Exit,
+                Event::MainEventsCleared => window.request_redraw(),
+                _ => (),
+            }
+            event_tx.send(event.to_static().unwrap()).unwrap();
         });
     }
 }

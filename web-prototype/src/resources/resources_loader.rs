@@ -1,5 +1,6 @@
 use image::GenericImageView;
 use instant::Duration;
+use rand::Rng;
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
@@ -11,6 +12,7 @@ use thiserror::Error;
 
 use crate::resources::resources_catalog::ResourcesCatalogItem;
 use crate::resources::{Mesh, Resources, ResourcesCatalog, Texture};
+use crate::runtime::Runtime;
 
 #[derive(Debug, Error)]
 pub enum ResourceLoaderError {
@@ -47,35 +49,22 @@ impl ResourcesLoader {
         }
     }
 
-    pub fn start_load(&mut self, catalog: ResourcesCatalog) {
+    pub fn start_load(&mut self, runtime: Runtime, catalog: ResourcesCatalog) {
         self.all_count = catalog.items.len();
 
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            tokio::spawn(Self::load(
-                catalog.clone(),
-                Arc::clone(&self.loaded_flag),
-                Arc::clone(&self.loaded_count),
-                self.all_count,
-                Arc::clone(&self.loaded_meshes),
-                Arc::clone(&self.loaded_textures),
-            ));
-        }
-
-        #[cfg(target_arch = "wasm32")]
-        {
-            wasm_bindgen_futures::spawn_local(Self::load(
-                catalog.clone(),
-                Arc::clone(&self.loaded_flag),
-                Arc::clone(&self.loaded_count),
-                self.all_count,
-                Arc::clone(&self.loaded_meshes),
-                Arc::clone(&self.loaded_textures),
-            ));
-        }
+        runtime.spawn(Self::load(
+            runtime.clone(),
+            catalog.clone(),
+            Arc::clone(&self.loaded_flag),
+            Arc::clone(&self.loaded_count),
+            self.all_count,
+            Arc::clone(&self.loaded_meshes),
+            Arc::clone(&self.loaded_textures),
+        ));
     }
 
     async fn load(
+        runtime: Runtime,
         catalog: ResourcesCatalog,
         loaded_flag: Arc<AtomicBool>,
         loaded_count: Arc<AtomicU32>,
@@ -87,47 +76,72 @@ impl ResourcesLoader {
         let (texture_sender, texture_receiver) = mpsc::channel::<Texture>();
 
         #[cfg(not(target_arch = "wasm32"))]
-        {
-            let tasks = catalog
+        let tasks = {
+            catalog
                 .items
                 .iter()
                 .map(|item| match item.clone() {
-                    ResourcesCatalogItem::Mesh { hash, path } => {
-                        Box::pin(Self::load_mesh(mesh_sender.clone(), hash, path))
-                            as Pin<Box<dyn Future<Output = ()> + Send>>
-                    }
-                    ResourcesCatalogItem::Texture { hash, path } => {
-                        Box::pin(Self::load_texture(texture_sender.clone(), hash, path))
-                            as Pin<Box<dyn Future<Output = ()> + Send>>
-                    }
+                    ResourcesCatalogItem::Mesh { hash, path } => Box::pin({
+                        let runtime = runtime.clone();
+                        let mesh_sender = mesh_sender.clone();
+                        async move {
+                            let duration =
+                                Duration::from_secs_f64(rand::thread_rng().gen_range(0.0..1.0));
+                            runtime.delay(duration).await;
+                            Self::load_mesh(mesh_sender, hash, path).await;
+                        }
+                    })
+                        as Pin<Box<dyn Future<Output = ()> + Send>>,
+                    ResourcesCatalogItem::Texture { hash, path } => Box::pin({
+                        let runtime = runtime.clone();
+                        let texture_sender = texture_sender.clone();
+                        async move {
+                            let duration =
+                                Duration::from_secs_f64(rand::thread_rng().gen_range(0.0..1.0));
+                            runtime.delay(duration).await;
+                            Self::load_texture(texture_sender, hash, path).await;
+                        }
+                    })
+                        as Pin<Box<dyn Future<Output = ()> + Send>>,
                 })
-                .collect::<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>>();
-            tokio::spawn(async {
-                futures::future::join_all(tasks).await;
-            });
-            tokio::task::yield_now().await;
-        }
+                .collect::<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>>()
+        };
 
         #[cfg(target_arch = "wasm32")]
-        {
-            let tasks = catalog
+        let tasks = {
+            catalog
                 .items
                 .iter()
                 .map(|item| match item.clone() {
-                    ResourcesCatalogItem::Mesh { hash, path } => {
-                        Box::pin(Self::load_mesh(mesh_sender.clone(), hash, path))
-                            as Pin<Box<dyn Future<Output = ()>>>
-                    }
-                    ResourcesCatalogItem::Texture { hash, path } => {
-                        Box::pin(Self::load_texture(texture_sender.clone(), hash, path))
-                            as Pin<Box<dyn Future<Output = ()>>>
-                    }
+                    ResourcesCatalogItem::Mesh { hash, path } => Box::pin({
+                        let runtime = runtime.clone();
+                        let mesh_sender = mesh_sender.clone();
+                        async move {
+                            let duration =
+                                Duration::from_secs_f64(rand::thread_rng().gen_range(0.0..1.0));
+                            runtime.delay(duration).await;
+                            Self::load_mesh(mesh_sender, hash, path).await;
+                        }
+                    })
+                        as Pin<Box<dyn Future<Output = ()>>>,
+                    ResourcesCatalogItem::Texture { hash, path } => Box::pin({
+                        let runtime = runtime.clone();
+                        let texture_sender = texture_sender.clone();
+                        async move {
+                            let duration =
+                                Duration::from_secs_f64(rand::thread_rng().gen_range(0.0..1.0));
+                            runtime.delay(duration).await;
+                            Self::load_texture(texture_sender, hash, path).await;
+                        }
+                    })
+                        as Pin<Box<dyn Future<Output = ()>>>,
                 })
-                .collect::<Vec<Pin<Box<dyn Future<Output = ()>>>>>();
-            wasm_bindgen_futures::spawn_local(async {
-                futures::future::join_all(tasks).await;
-            });
-        }
+                .collect::<Vec<Pin<Box<dyn Future<Output = ()>>>>>()
+        };
+
+        runtime.spawn(async {
+            futures::future::join_all(tasks).await;
+        });
 
         while loaded_count.load(Ordering::SeqCst) < all_count as u32 {
             for mesh in mesh_receiver.try_iter() {
@@ -147,14 +161,10 @@ impl ResourcesLoader {
                 loaded_count.fetch_add(1, Ordering::SeqCst);
             }
 
-            #[cfg(target_arch = "wasm32")]
-            {
-                let _ = wasm_timer::Delay::new(Duration::ZERO).await;
-                log::debug!("loading loop.")
-            }
+            runtime.delay(Duration::ZERO).await;
         }
 
-        // tokio::time::sleep(Duration::from_secs_f32(0.3)).await;
+        runtime.delay(Duration::from_secs_f32(0.3)).await;
 
         loaded_flag.store(true, Ordering::SeqCst);
     }
@@ -228,7 +238,6 @@ impl ResourcesLoader {
             let uint8_array = Uint8Array::new(&chunk);
             bytes.append(&mut uint8_array.to_vec());
         }
-        log::error!("length: {}", bytes.len());
 
         let img = image::load_from_memory(&bytes).unwrap();
         let dimensions = img.dimensions();

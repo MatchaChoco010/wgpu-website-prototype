@@ -71,7 +71,11 @@ impl LoadingEguiPass {
         self.platform.begin_frame();
 
         egui::CentralPanel::default()
-            .frame(egui::Frame::none().margin([100.0, 100.0]))
+            .frame(
+                egui::Frame::default()
+                    .fill(egui::Color32::from_rgb(10, 10, 10))
+                    .margin([100.0, 100.0]),
+            )
             .show(&self.platform.context(), |ui| {
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                     ui.add(
