@@ -1,3 +1,4 @@
+use image::GenericImageView;
 use instant::Duration;
 use std::future::Future;
 use std::path::Path;
@@ -167,7 +168,16 @@ impl ResourcesLoader {
 
     #[cfg(not(target_arch = "wasm32"))]
     async fn load_texture(texture_sender: Sender<Texture>, hash: u64, path: impl AsRef<Path>) {
-        use image::GenericImageView;
+        use std::env;
+        use std::path::PathBuf;
+
+        let path = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+            let mut cargo_dir = PathBuf::from(manifest_dir);
+            cargo_dir.push(path);
+            cargo_dir.as_path().to_owned()
+        } else {
+            path.as_ref().to_owned()
+        };
 
         let img = image::open(path).unwrap_or_else(|_| panic!("Failed to load image."));
         let dimensions = img.dimensions();
@@ -185,7 +195,6 @@ impl ResourcesLoader {
     #[cfg(target_arch = "wasm32")]
     async fn load_texture(texture_sender: Sender<Texture>, hash: u64, path: impl AsRef<Path>) {
         use futures::StreamExt;
-        use image::GenericImageView;
         use js_sys::Uint8Array;
         use wasm_bindgen::{prelude::*, JsCast};
         use wasm_bindgen_futures::JsFuture;

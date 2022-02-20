@@ -1388,12 +1388,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pollster"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5da3b0203fd7ee5720aa0b5e790b591aa5d3f41c3ed2c34a3a393382198af2f7"
-
-[[package]]
 name = "proc-macro-crate"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1931,6 +1925,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "web-prototype"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "console_error_panic_hook",
+ "const-fnv1a-hash",
+ "egui",
+ "egui_wgpu_backend 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "egui_wgpu_backend 0.16.0 (git+https://github.com/MatchaChoco010/egui_wgpu_backend?branch=support-old-wgsl)",
+ "egui_winit_platform",
+ "env_logger",
+ "futures",
+ "image",
+ "instant",
+ "js-sys",
+ "log",
+ "thiserror",
+ "tokio",
+ "vek",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "wasm-streams",
+ "wasm-timer",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "web-sys"
 version = "0.3.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2035,38 +2060,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "549533d9e1cdd4b4cda7718d33ff500fc4c34b5467b71d76b547ae0324f3b2a2"
 dependencies = [
  "bitflags",
-]
-
-[[package]]
-name = "wgpu-website-prototype"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bytemuck",
- "console_error_panic_hook",
- "const-fnv1a-hash",
- "egui",
- "egui_wgpu_backend 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "egui_wgpu_backend 0.16.0 (git+https://github.com/MatchaChoco010/egui_wgpu_backend?branch=support-old-wgsl)",
- "egui_winit_platform",
- "env_logger",
- "futures",
- "image",
- "instant",
- "js-sys",
- "log",
- "pollster",
- "thiserror",
- "tokio",
- "vek",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-logger",
- "wasm-streams",
- "wasm-timer",
- "web-sys",
- "wgpu",
- "winit",
 ]
 
 [[package]]

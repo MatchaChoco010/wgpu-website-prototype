@@ -1,3 +1,6 @@
+[config]
+default_to_workspace = false
+
 [tasks.help]
 script_runner = "@duckscript"
 script = """
@@ -10,21 +13,40 @@ echo \tweb-build\tbuild wasm
 
 [tasks.run]
 command = "cargo"
-args = ["run", "--release"]
+args = ["run", "-p", "web-prototype", "--release"]
 
 [tasks.build]
 command = "cargo"
-args = ["build", "--release"]
+args = ["build", "-p", "web-prototype", "--release"]
+
+[tasks.web-clean]
+command = "trunk"
+args = [ "clean" ]
 
 [tasks.web]
 command = "trunk"
-args = ["serve", "--port=80", "--release"]
+args = [
+  "serve",
+  "web-prototype/index.html",
+  "--port",
+  "80",
+  "--release",
+  "-d",
+  "dist"
+]
 env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
 
 [tasks.web-build]
 command = "trunk"
-args = ["build"]
+args = [
+  "build",
+  "web-prototype/index.html",
+  "--release",
+  "-d",
+  "dist"
+]
 env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
+dependencies = [ "web-clean" ]
 
 [tasks.default]
 alias = "help"
