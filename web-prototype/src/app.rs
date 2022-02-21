@@ -19,14 +19,25 @@ impl App {
         let resources_loader = ResourcesLoader::new();
 
         #[cfg(target_arch = "wasm32")]
-        {
-            use winit::platform::web::WindowExtWebSys;
-            web_sys::window()
+        let window = {
+            // use winit::platform::web::WindowExtWebSys;
+            // web_sys::window()
+            //     .and_then(|window| window.document())
+            //     .and_then(|document| document.body())
+            //     .and_then(|body| body.append_child(&window.canvas()).ok())
+            //     .unwrap_or_else(|| panic!("Failed to add canvas"));
+            use wasm_bindgen::JsCast;
+            use winit::platform::web::WindowBuilderExtWebSys;
+            let canvas = web_sys::window()
                 .and_then(|window| window.document())
-                .and_then(|document| document.body())
-                .and_then(|body| body.append_child(&window.canvas()).ok())
-                .unwrap_or_else(|| panic!("Failed to add canvas"));
-        }
+                .and_then(|document| document.get_element_by_id("canvas"))
+                .and_then(|canvas| canvas.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+                .unwrap_or_else(|| panic!("Failed to get canvas"));
+            WindowBuilder::new()
+                .with_canvas(Some(canvas))
+                .build(&event_loop)
+                .unwrap_or_else(|_| panic!("Failed to create window."))
+        };
 
         Self {
             event_loop,

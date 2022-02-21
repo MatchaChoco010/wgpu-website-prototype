@@ -3,4 +3,5 @@ resolver = "2"
 members = [
   "step-runtime",
   "web-prototype",
+  "yew-wgpu",
 ]

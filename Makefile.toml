@@ -19,10 +19,6 @@ args = ["run", "-p", "web-prototype", "--release"]
 command = "cargo"
 args = ["build", "-p", "web-prototype", "--release"]
 
-[tasks.web-clean]
-command = "trunk"
-args = [ "clean" ]
-
 [tasks.web]
 command = "trunk"
 args = [
@@ -46,7 +42,32 @@ args = [
   "dist"
 ]
 env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
-dependencies = [ "web-clean" ]
+
+[tasks.yew]
+command = "trunk"
+args = [
+  "serve",
+  "yew-wgpu/index.html",
+  "-d",
+  "dist",
+  "--release",
+  "--port",
+  "80",
+]
+env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
+
+[tasks.yew-build]
+command = "trunk"
+args = [
+  "build",
+  "yew-wgpu/index.html",
+  "-d",
+  "dist",
+  "--release",
+  "--port",
+  "80",
+]
+env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
 
 [tasks.default]
 alias = "help"
