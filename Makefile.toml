@@ -64,8 +64,6 @@ args = [
   "-d",
   "dist",
   "--release",
-  "--port",
-  "80",
 ]
 env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
 
