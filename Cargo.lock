@@ -2419,6 +2419,7 @@ dependencies = [
  "raw-window-handle",
  "tokio",
  "vek",
+ "wasm-bindgen-futures",
  "wasm-logger",
  "web-sys",
  "wgpu",

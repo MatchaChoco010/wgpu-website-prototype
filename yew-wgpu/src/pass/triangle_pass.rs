@@ -46,6 +46,7 @@ const VERTICES: &[Vertex] = &[
 pub struct TrianglePass {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
+    clear_color: vek::Rgba<f32>,
 }
 impl TrianglePass {
     pub fn new(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> Self {
@@ -105,15 +106,11 @@ impl TrianglePass {
         Self {
             render_pipeline,
             vertex_buffer,
+            clear_color: vek::Rgba::black(),
         }
     }
 
-    pub fn render(
-        &self,
-        encoder: &mut wgpu::CommandEncoder,
-        clear_color: &vek::Rgba<f32>,
-        view: &wgpu::TextureView,
-    ) {
+    pub fn render(&self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[wgpu::RenderPassColorAttachment {
@@ -121,10 +118,10 @@ impl TrianglePass {
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: (clear_color.r as f64).powf(1.0 / 2.2),
-                        g: (clear_color.g as f64).powf(1.0 / 2.2),
-                        b: (clear_color.b as f64).powf(1.0 / 2.2),
-                        a: (clear_color.a as f64),
+                        r: (self.clear_color.r as f64).powf(1.0 / 2.2),
+                        g: (self.clear_color.g as f64).powf(1.0 / 2.2),
+                        b: (self.clear_color.b as f64).powf(1.0 / 2.2),
+                        a: (self.clear_color.a as f64),
                     }),
                     store: true,
                 },
@@ -135,5 +132,9 @@ impl TrianglePass {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.draw(0..3, 0..1);
+    }
+
+    pub fn set_clear_color(&mut self, clear_color: vek::Rgba<f32>) {
+        self.clear_color = clear_color;
     }
 }
