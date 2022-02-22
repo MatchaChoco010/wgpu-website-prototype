@@ -1,5 +1,6 @@
+use yew_wgpu::*;
+
 use crate::pass::TrianglePass;
-use crate::wgpu_canvas::*;
 
 #[derive(Clone, PartialEq)]
 pub struct MyCanvasAppState {

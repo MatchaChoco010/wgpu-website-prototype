@@ -1,12 +1,11 @@
-mod hooks;
+use yew_wgpu::*;
+
 mod my_canvas_app;
 mod pass;
 mod rgba_slider;
-mod wgpu_canvas;
 
 use my_canvas_app::*;
 use rgba_slider::*;
-use wgpu_canvas::*;
 use yew::prelude::*;
 
 #[function_component(MyApp)]

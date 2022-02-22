@@ -1,53 +1,11 @@
 [config]
 default_to_workspace = false
 
-[tasks.help]
-script_runner = "@duckscript"
-script = """
-echo cargo make <command>
-echo \trun\t\trun native app
-echo \tbuild\t\tbuild native app
-echo \tweb\t\tbuild wasm and serve files
-echo \tweb-build\tbuild wasm
-"""
-
-[tasks.run]
-command = "cargo"
-args = ["run", "-p", "web-prototype", "--release"]
-
-[tasks.build]
-command = "cargo"
-args = ["build", "-p", "web-prototype", "--release"]
-
-[tasks.web]
-command = "trunk"
-args = [
-  "serve",
-  "web-prototype/index.html",
-  "--port",
-  "80",
-  "--release",
-  "-d",
-  "dist"
-]
-env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
-
-[tasks.web-build]
-command = "trunk"
-args = [
-  "build",
-  "web-prototype/index.html",
-  "--release",
-  "-d",
-  "dist"
-]
-env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
-
 [tasks.yew]
 command = "trunk"
 args = [
   "serve",
-  "yew-wgpu/index.html",
+  "yew-wgpu-web-prototype/index.html",
   "-d",
   "dist",
   "--release",
@@ -60,12 +18,9 @@ env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
 command = "trunk"
 args = [
   "build",
-  "yew-wgpu/index.html",
+  "yew-wgpu-web-prototype/index.html",
   "-d",
   "dist",
   "--release",
 ]
 env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
-
-[tasks.default]
-alias = "help"

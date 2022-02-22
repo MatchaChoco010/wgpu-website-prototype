@@ -2412,16 +2412,24 @@ dependencies = [
 name = "yew-wgpu"
 version = "0.1.0"
 dependencies = [
+ "gloo-render",
+ "raw-window-handle",
+ "wasm-bindgen-futures",
+ "wgpu",
+ "yew",
+]
+
+[[package]]
+name = "yew-wgpu-web-prototype"
+version = "0.1.0"
+dependencies = [
  "bytemuck",
  "console_error_panic_hook",
- "gloo-render",
  "log",
- "raw-window-handle",
- "tokio",
  "vek",
- "wasm-bindgen-futures",
  "wasm-logger",
  "web-sys",
  "wgpu",
  "yew",
+ "yew-wgpu",
 ]

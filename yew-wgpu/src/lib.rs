@@ -3,7 +3,8 @@ use raw_window_handle::{HasRawWindowHandle, RawWindowHandle, WebHandle};
 use std::{cell::RefCell, future::Future, pin::Pin, rc::Rc};
 use yew::prelude::*;
 
-use crate::hooks::*;
+mod hooks;
+use hooks::*;
 
 pub struct WgpuCanvasWindow {
     canvas_id: u32,
