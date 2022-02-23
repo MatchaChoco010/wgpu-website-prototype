@@ -8,6 +8,9 @@ use my_canvas_app::*;
 use rgba_slider::*;
 use yew::prelude::*;
 
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 #[function_component(MyApp)]
 fn my_app() -> Html {
     let color_state = use_state(|| vek::Rgba::black());
@@ -20,11 +23,13 @@ fn my_app() -> Html {
         }
     });
 
-    let state = MyCanvasAppState { clear_color: color };
+    let props = MyCanvasAppProps { clear_color: color };
 
     html! {
         <>
-            <WgpuCanvas<MyCanvasApp> {state} />
+            <div id="resize-canvas">
+                <WgpuCanvas<MyCanvasApp> {props} />
+            </div>
             <RgbSlider {color} {onchange} />
         </>
     }

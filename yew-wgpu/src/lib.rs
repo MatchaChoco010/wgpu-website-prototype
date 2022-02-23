@@ -6,12 +6,33 @@ use yew::prelude::*;
 mod hooks;
 use hooks::*;
 
+#[derive(Clone, Copy)]
+pub struct WgpuCanvasSize {
+    pub width: u32,
+    pub height: u32,
+}
+impl WgpuCanvasSize {
+    fn new(width: u32, height: u32) -> Self {
+        Self { width, height }
+    }
+}
+impl Default for WgpuCanvasSize {
+    fn default() -> Self {
+        Self::new(100, 100)
+    }
+}
+
 pub struct WgpuCanvasWindow {
     canvas_id: u32,
+    size: WgpuCanvasSize,
 }
 impl WgpuCanvasWindow {
-    fn new(canvas_id: u32) -> Self {
-        Self { canvas_id }
+    fn new(canvas_id: u32, size: WgpuCanvasSize) -> Self {
+        Self { canvas_id, size }
+    }
+
+    pub fn size(&self) -> &WgpuCanvasSize {
+        &self.size
     }
 }
 unsafe impl HasRawWindowHandle for WgpuCanvasWindow {
@@ -33,23 +54,29 @@ impl<App> WgpuCanvasAppCreator<App> {
     }
 }
 pub trait WgpuCanvasApp: Sized {
-    type State: PartialEq + Clone + Default;
+    type Props: PartialEq + Clone + Default;
     fn new(canvas_window: WgpuCanvasWindow) -> WgpuCanvasAppCreator<Self>;
-    fn render(&self, delta_time: f64);
-    fn update(&mut self, update: &Self::State);
+    fn update(&mut self, delta_time: f64, size: &WgpuCanvasSize);
+    fn update_props(&mut self, update: &Self::Props);
 }
 
 enum AppAction<App: WgpuCanvasApp + 'static> {
     Render(f64),
-    StateChanged(App::State),
-    AppInitialized(Rc<RefCell<App>>),
+    StateChanged(App::Props),
+    AppInitialized(Rc<RefCell<App>>, WgpuCanvasSize),
+    #[cfg(web_sys_unstable_apis)]
+    AppResized(WgpuCanvasSize),
 }
 struct AppReducer<App: WgpuCanvasApp + 'static> {
     app: Option<Rc<RefCell<App>>>,
+    size: WgpuCanvasSize,
 }
 impl<App: WgpuCanvasApp + 'static> Default for AppReducer<App> {
     fn default() -> Self {
-        Self { app: None }
+        Self {
+            app: None,
+            size: WgpuCanvasSize::default(),
+        }
     }
 }
 impl<App: WgpuCanvasApp + 'static> Reducible for AppReducer<App> {
@@ -58,55 +85,124 @@ impl<App: WgpuCanvasApp + 'static> Reducible for AppReducer<App> {
         match action {
             Self::Action::Render(delta) => {
                 if let Some(app) = &self.app {
-                    app.borrow().render(delta);
+                    app.borrow_mut().update(delta, &self.size);
                 }
                 self
             }
-            Self::Action::StateChanged(state) => {
+            Self::Action::StateChanged(props) => {
                 if let Some(app) = &self.app {
-                    app.borrow_mut().update(&state);
+                    app.borrow_mut().update_props(&props);
                 }
                 self
             }
-            Self::Action::AppInitialized(app) => Self { app: Some(app) }.into(),
+            Self::Action::AppInitialized(app, size) => Self {
+                app: Some(app),
+                size,
+            }
+            .into(),
+            #[cfg(web_sys_unstable_apis)]
+            Self::Action::AppResized(size) => Self {
+                app: self.app.clone(),
+                size,
+            }
+            .into(),
         }
     }
 }
 
 #[derive(Properties)]
 pub struct Props<App: WgpuCanvasApp + 'static> {
-    pub state: App::State,
+    pub props: App::Props,
 }
 impl<App: WgpuCanvasApp + 'static> PartialEq for Props<App> {
     fn eq(&self, other: &Self) -> bool {
-        self.state == other.state
+        self.props == other.props
     }
 }
 
 #[function_component(WgpuCanvas)]
-
 pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
+    // Not Supported ResizeObserver
+    if !cfg!(web_sys_unstable_apis) {
+        return html! {
+            <div data-wgpu-canvas={"not supported"} >
+                {"Unsupported because of ResizeObserver not found"}
+            </div>
+        };
+    }
+
     let reducer = use_reducer(AppReducer::<App>::default);
+    let canvas_ref = use_node_ref();
 
-    let handle = use_async_once(|| async move {
-        Rc::new(RefCell::new(
-            App::new(WgpuCanvasWindow::new(1)).future.await,
-        ))
+    // Element Size Changed
+    let size = use_state(WgpuCanvasSize::default);
+    #[cfg(web_sys_unstable_apis)]
+    {
+        use wasm_bindgen::prelude::*;
+        use wasm_bindgen::JsCast;
+
+        let canvas_ref = canvas_ref.clone();
+        use_effect_with_deps(
+            {
+                let reducer = reducer.clone();
+                let size = size.clone();
+                move |canvas_ref: &NodeRef| {
+                    let canvas = canvas_ref
+                        .cast::<web_sys::Element>()
+                        .unwrap_or_else(|| panic!("Failed to get canvas element"));
+                    let f = Closure::wrap(Box::new({
+                        let canvas_ref = canvas_ref.clone();
+                        let size_state = size.clone();
+                        move || {
+                            let canvas = canvas_ref
+                                .cast::<web_sys::Element>()
+                                .unwrap_or_else(|| panic!("Failed to get canvas element"));
+                            let rect = canvas.get_bounding_client_rect();
+                            let size =
+                                WgpuCanvasSize::new(rect.width() as u32, rect.height() as u32);
+                            size_state.set(size);
+                            reducer.dispatch(AppAction::AppResized(size))
+                        }
+                    }) as Box<dyn FnMut()>);
+                    let observer =
+                        web_sys::ResizeObserver::new(f.as_ref().unchecked_ref()).unwrap();
+                    observer.observe(&canvas);
+                    f.forget();
+                    move || {
+                        observer.disconnect();
+                        size.set(WgpuCanvasSize::default());
+                    }
+                }
+            },
+            canvas_ref,
+        );
+    };
+
+    // Initialize App
+    let app_initialize_handle = use_async_once({
+        let size = size.clone();
+        || async move {
+            log::debug!("Initialize");
+            Rc::new(RefCell::new(
+                App::new(WgpuCanvasWindow::new(1, *size)).future.await,
+            ))
+        }
     });
-
     use_effect_with_deps(
         {
             let reducer = reducer.clone();
+            let size = size.clone();
             move |handle: &UseAsyncOnceHandle<Rc<RefCell<App>>>| {
                 if let UseAsyncOnceState::Ready(app) = handle.state() {
-                    reducer.dispatch(AppAction::AppInitialized(app.clone()));
+                    reducer.dispatch(AppAction::AppInitialized(app.clone(), *size));
                 }
                 || ()
             }
         },
-        handle,
+        app_initialize_handle,
     );
 
+    // Register Animation Callback
     let animation_handle = use_mut_ref(|| None);
     let handle = request_animation_frame({
         let reducer = reducer.clone();
@@ -114,15 +210,20 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
     });
     *animation_handle.borrow_mut() = Some(handle);
 
+    // Update props
     use_effect_with_deps(
         move |state| {
             reducer.dispatch(AppAction::StateChanged(state.clone()));
             || ()
         },
-        props.state.clone(),
+        props.props.clone(),
     );
 
     html! {
-        <canvas data-raw-handle=1 width=640 height=480/>
+        <canvas
+            data-raw-handle=1
+            width={size.width.to_string()}
+            height={size.height.to_string()}
+            ref={canvas_ref}/>
     }
 }

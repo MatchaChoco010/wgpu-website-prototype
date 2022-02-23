@@ -3,9 +3,19 @@ name = "yew-wgpu"
 version = "0.1.0"
 edition = "2021"
 
+[build]
+rustflags = ["web_sys_unstable_apis"]
+
 [dependencies]
+log = "0.4.14"
 gloo-render = "0.1.0"
 raw-window-handle = "0.4.2"
+wasm-bindgen = "0.2.79"
 wasm-bindgen-futures = "0.4.29"
+web-sys = { version = "0.3.56", features = [
+  "DomRect",
+  "Element",
+  "ResizeObserver",
+]}
 wgpu = "0.12.0"
 yew = "0.19.3"

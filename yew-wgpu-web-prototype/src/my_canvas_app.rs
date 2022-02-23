@@ -3,10 +3,10 @@ use yew_wgpu::*;
 use crate::pass::TrianglePass;
 
 #[derive(Clone, PartialEq)]
-pub struct MyCanvasAppState {
+pub struct MyCanvasAppProps {
     pub clear_color: vek::Rgba<f32>,
 }
-impl Default for MyCanvasAppState {
+impl Default for MyCanvasAppProps {
     fn default() -> Self {
         Self {
             clear_color: vek::Rgba::<f32>::black(),
@@ -20,15 +20,16 @@ pub struct MyCanvasApp {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    size: WgpuCanvasSize,
 
     triangle_pass: TrianglePass,
 }
 impl WgpuCanvasApp for MyCanvasApp {
-    type State = MyCanvasAppState;
+    type Props = MyCanvasAppProps;
 
     fn new(canvas_window: WgpuCanvasWindow) -> WgpuCanvasAppCreator<Self> {
         WgpuCanvasAppCreator::new(async move {
-            let size = (300, 150);
+            let size = *canvas_window.size();
 
             let instance = wgpu::Instance::new(wgpu::Backends::BROWSER_WEBGPU);
             let surface = unsafe { instance.create_surface(&canvas_window) };
@@ -56,8 +57,8 @@ impl WgpuCanvasApp for MyCanvasApp {
             let config = wgpu::SurfaceConfiguration {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
                 format: wgpu::TextureFormat::Bgra8Unorm,
-                width: size.0,
-                height: size.1,
+                width: size.width,
+                height: size.height,
                 present_mode: wgpu::PresentMode::Fifo,
             };
             surface.configure(&device, &config);
@@ -70,12 +71,20 @@ impl WgpuCanvasApp for MyCanvasApp {
                 device,
                 queue,
                 config,
+                size,
                 triangle_pass,
             }
         })
     }
 
-    fn render(&self, _delta_time: f64) {
+    fn update(&mut self, _delta_time: f64, size: &WgpuCanvasSize) {
+        if size.width > 0 && size.height > 0 {
+            self.size = *size;
+            self.config.width = size.width;
+            self.config.height = size.height;
+            self.surface.configure(&self.device, &self.config);
+        }
+
         let output = self.surface.get_current_texture().unwrap();
 
         let view = output
@@ -94,7 +103,7 @@ impl WgpuCanvasApp for MyCanvasApp {
         output.present();
     }
 
-    fn update(&mut self, state: &Self::State) {
-        self.triangle_pass.set_clear_color(state.clear_color);
+    fn update_props(&mut self, props: &Self::Props) {
+        self.triangle_pass.set_clear_color(props.clear_color);
     }
 }
