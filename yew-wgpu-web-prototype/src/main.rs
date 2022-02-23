@@ -27,6 +27,7 @@ fn my_app() -> Html {
 
     html! {
         <>
+            <WgpuCanvas<MyCanvasApp> props={props.clone()} />
             <div id="resize-canvas">
                 <WgpuCanvas<MyCanvasApp> {props} />
             </div>

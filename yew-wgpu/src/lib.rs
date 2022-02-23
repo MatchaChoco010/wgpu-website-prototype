@@ -6,6 +6,10 @@ use yew::prelude::*;
 mod hooks;
 use hooks::*;
 
+thread_local! {
+    static CANVAS_ID: Rc<RefCell<u32>> = Rc::new(RefCell::new(1));
+}
+
 #[derive(Clone, Copy)]
 pub struct WgpuCanvasSize {
     pub width: u32,
@@ -134,6 +138,16 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
     let reducer = use_reducer(AppReducer::<App>::default);
     let canvas_ref = use_node_ref();
 
+    // Get Canvas ID
+    let id = use_state(|| {
+        CANVAS_ID.with(|counter| {
+            let id = *counter.borrow();
+            *counter.borrow_mut() += 1;
+            id
+        })
+    });
+    let id = *id;
+
     // Element Size Changed
     let size = use_state(WgpuCanvasSize::default);
     #[cfg(web_sys_unstable_apis)]
@@ -184,7 +198,7 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
         || async move {
             log::debug!("Initialize");
             Rc::new(RefCell::new(
-                App::new(WgpuCanvasWindow::new(1, *size)).future.await,
+                App::new(WgpuCanvasWindow::new(id, *size)).future.await,
             ))
         }
     });
@@ -221,7 +235,7 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
 
     html! {
         <canvas
-            data-raw-handle=1
+            data-raw-handle={id.to_string()}
             width={size.width.to_string()}
             height={size.height.to_string()}
             ref={canvas_ref}/>
