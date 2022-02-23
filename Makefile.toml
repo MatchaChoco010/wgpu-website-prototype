@@ -24,3 +24,18 @@ args = [
   "--release",
 ]
 env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
+
+[tasks.build]
+command = "wasm-pack"
+args = [
+  "build",
+  "yew-wgpu-web-prototype",
+  "--target",
+  "web",
+  "--no-typescript",
+  "--out-dir",
+  "../out",
+  "--out-name",
+  "index",
+  "--release",
+]

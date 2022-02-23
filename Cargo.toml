@@ -3,6 +3,13 @@ resolver = "2"
 members = [
   "step-runtime",
   "web-prototype",
-  "yew-wgpu",
+  "components/yew-wgpu",
+  "components/yew-color-picker",
   "yew-wgpu-web-prototype",
 ]
+
+[profile.release]
+panic = 'abort'
+codegen-units = 1
+opt-level = 'z'
+lto = true

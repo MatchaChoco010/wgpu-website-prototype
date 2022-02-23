@@ -196,7 +196,6 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
     let app_initialize_handle = use_async_once({
         let size = size.clone();
         || async move {
-            log::debug!("Initialize");
             Rc::new(RefCell::new(
                 App::new(WgpuCanvasWindow::new(id, *size)).future.await,
             ))

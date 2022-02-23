@@ -1,3 +1,4 @@
+use yew_color_picker::*;
 use yew_wgpu::*;
 
 mod my_canvas_app;
@@ -6,6 +7,7 @@ mod rgba_slider;
 
 use my_canvas_app::*;
 use rgba_slider::*;
+use wasm_bindgen::prelude::wasm_bindgen;
 use yew::prelude::*;
 
 #[global_allocator]
@@ -32,11 +34,15 @@ fn my_app() -> Html {
                 <WgpuCanvas<MyCanvasApp> {props} />
             </div>
             <RgbSlider {color} {onchange} />
+            <ColorPicker />
         </>
     }
 }
 
-fn main() {
+#[wasm_bindgen]
+#[no_mangle]
+pub fn init() {
     wasm_logger::init(wasm_logger::Config::default());
+
     yew::start_app::<MyApp>();
 }
