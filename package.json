@@ -1,0 +1,20 @@
+{
+  "name": "wgpu-website-prototype",
+  "version": "1.0.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatchaChoco010/wgpu-website-prototype.git"
+  },
+  "author": "Orito Itsuki",
+  "license": "MIT OR Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/MatchaChoco010/wgpu-website-prototype/issues"
+  },
+  "homepage": "https://github.com/MatchaChoco010/wgpu-website-prototype#readme",
+  "devDependencies": {
+    "browser-sync": "^2.27.7",
+    "chokidar-cli": "^3.0.0",
+    "sass": "^1.25.0"
+  }
+}

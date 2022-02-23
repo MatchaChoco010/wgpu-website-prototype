@@ -2,6 +2,9 @@
 name = "yew-wgpu-web-prototype"
 version = "0.1.0"
 edition = "2021"
+authors = ["Orito Itsuki"]
+license = "MIT OR Apache-2.0"
+description = "Yew WebGPU App prototype"
 
 [lib]
 crate-type = ["cdylib"]
@@ -11,25 +14,11 @@ bytemuck = { version="1.7.3", features = ["derive"]}
 console_error_panic_hook = "0.1.7"
 log = "0.4.14"
 vek = "0.15.6"
+wasm-bindgen = "0.2.79"
 wasm-logger = "0.2.0"
 web-sys = "0.3.56"
 wee_alloc = "0.4.5"
 wgpu = "0.12.0"
 yew = "0.19.3"
-yew-wgpu = { path = "../components/yew-wgpu" }
-yew-color-picker = { path = "../components/yew-color-picker" }
-wasm-bindgen = "0.2.79"
-
-# [package.metadata.wasm-pack.profile.release]
-# wasm-opt = ["-Oz"]
-
-# [package.metadata.wasm-pack.profile.release.wasm-bindgen]
-# debug-js-glue = false
-# demangle-name-section = true
-# dwarf-debug-info = false
-
-[profile.release]
-# panic = 'abort'
-# codegen-units = 1
-# opt-level = 'z'
-# lto = true
+yew-wgpu = { path = "../yew-components/yew-wgpu" }
+yew-color-picker = { path = "../yew-components/yew-color-picker" }

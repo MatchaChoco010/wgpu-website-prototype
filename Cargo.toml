@@ -3,8 +3,8 @@ resolver = "2"
 members = [
   "step-runtime",
   "web-prototype",
-  "components/yew-wgpu",
-  "components/yew-color-picker",
+  "yew-components/yew-wgpu",
+  "yew-components/yew-color-picker",
   "yew-wgpu-web-prototype",
 ]
 

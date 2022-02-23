@@ -3,10 +3,8 @@ use yew_wgpu::*;
 
 mod my_canvas_app;
 mod pass;
-mod rgba_slider;
 
 use my_canvas_app::*;
-use rgba_slider::*;
 use wasm_bindgen::prelude::wasm_bindgen;
 use yew::prelude::*;
 
@@ -29,20 +27,17 @@ fn my_app() -> Html {
 
     html! {
         <>
-            <WgpuCanvas<MyCanvasApp> props={props.clone()} />
             <div id="resize-canvas">
                 <WgpuCanvas<MyCanvasApp> {props} />
             </div>
             <RgbSlider {color} {onchange} />
-            <ColorPicker />
         </>
     }
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(start)]
 #[no_mangle]
-pub fn init() {
+pub fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-
     yew::start_app::<MyApp>();
 }

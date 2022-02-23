@@ -1,31 +1,20 @@
 [config]
 default_to_workspace = false
+load_cargo_aliases = false
+skip_core_tasks = true
+skip_git_env_info = true
+skip_rust_env_info = true
+skip_crate_env_info = true
+time_summary = true
 
-[tasks.yew]
-command = "trunk"
-args = [
-  "serve",
-  "yew-wgpu-web-prototype/index.html",
-  "-d",
-  "dist",
-  "--release",
-  "--port",
-  "80",
-]
-env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
 
-[tasks.yew-build]
-command = "trunk"
-args = [
-  "build",
-  "yew-wgpu-web-prototype/index.html",
-  "-d",
-  "dist",
-  "--release",
-]
-env = { RUSTFLAGS = "--cfg=web_sys_unstable_apis" }
+[tasks.clean]
+script_runner="@duckscript"
+script = "rm -r dist"
+category = "Build"
 
-[tasks.build]
+
+[tasks.build-yew-app]
 command = "wasm-pack"
 args = [
   "build",
@@ -34,8 +23,112 @@ args = [
   "web",
   "--no-typescript",
   "--out-dir",
-  "../out",
+  "../tmp",
   "--out-name",
-  "index",
+  "entry",
   "--release",
 ]
+private = true
+category = "Build"
+
+[tasks.copy-wasm]
+script_runner="@duckscript"
+script = "glob_cp tmp/*.wasm dist"
+private = true
+category = "Build"
+
+[tasks.copy-js]
+script_runner="@duckscript"
+script = "glob_cp tmp/*.js dist"
+private = true
+category = "Build"
+
+[tasks.clean-tmp-directory]
+script_runner="@duckscript"
+script = "rm -r tmp"
+private = true
+category = "Build"
+
+[tasks.build-rust]
+category = "Build"
+[tasks.build-rust.run_task]
+name = ["build-yew-app", "copy-js", "copy-wasm"]
+fork = true
+cleanup_task = "clean-tmp-directory"
+
+
+[tasks.build-sass]
+script = "npx sass --style=compressed --no-source-map assets/entry.sass dist/style.css"
+private = true
+
+
+[tasks.copy-html]
+script_runner="@duckscript"
+script = "glob_cp assets/**/*.html dist"
+private = true
+category = "Build"
+
+
+[tasks.build-files]
+run_task = { name = ["build-rust", "build-sass", "copy-html"], parallel = true }
+private = true
+category = "Build"
+
+
+[tasks.watch-rust]
+script = """
+npx -c "chokidar "**/*.rs" -c \\"cargo make --allow-private build-rust\\""
+"""
+private = true
+category = "Build"
+
+[tasks.watch-sass]
+script = """
+npx -c "chokidar "assets/*.sass" -c \\"cargo make --allow-private build-sass\\""
+"""
+private = true
+category = "Build"
+
+[tasks.watch-html]
+script = """
+npx -c "chokidar "assets/*.html" -c \\"cargo make --allow-private copy-html\\""
+"""
+private = true
+category = "Build"
+
+[tasks.watch]
+category = "Build"
+[tasks.watch.run_task]
+name = ["watch-rust", "watch-sass", "watch-html"]
+parallel = true
+
+
+[tasks.start-server]
+script = """
+npx -c "browser-sync dist -w --index ./index.html --port 80 -b Chrome"
+"""
+private = true
+category = "Build"
+
+[tasks.start-watch-serve]
+private = true
+category = "Build"
+[tasks.start-watch-serve.run_task]
+name = ["watch", "start-server"]
+parallel = true
+
+[tasks.serve]
+category = "Build"
+[tasks.serve.run_task]
+name = ["build", "start-watch-serve"]
+
+
+[tasks.build]
+category = "Build"
+[tasks.build.run_task]
+name = ["clean", "build-files"]
+
+
+[tasks.default]
+dependencies = ["build"]
+category = "Build"

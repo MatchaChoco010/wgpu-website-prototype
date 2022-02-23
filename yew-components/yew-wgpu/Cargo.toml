@@ -2,6 +2,9 @@
 name = "yew-wgpu"
 version = "0.1.0"
 edition = "2021"
+authors = ["Orito Itsuki"]
+license = "MIT OR Apache-2.0"
+description = "WebGPU App base for Yew"
 
 [dependencies]
 gloo-render = "0.1.0"
