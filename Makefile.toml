@@ -43,6 +43,12 @@ script = "glob_cp tmp/*.js dist"
 private = true
 category = "Build"
 
+[tasks.copy-css]
+script_runner="@duckscript"
+script = "glob_cp target/wasm32-unknown-unknown/release/*.css dist"
+private = true
+category = "Build"
+
 [tasks.clean-tmp-directory]
 script_runner="@duckscript"
 script = "rm -r tmp"
@@ -51,47 +57,54 @@ category = "Build"
 
 [tasks.build-rust]
 category = "Build"
+private = true
 [tasks.build-rust.run_task]
-name = ["build-yew-app", "copy-js", "copy-wasm"]
-fork = true
-cleanup_task = "clean-tmp-directory"
+name = ["build-yew-app", "copy-js", "copy-wasm", "copy-css", "clean-tmp-directory"]
 
 
-[tasks.build-sass]
-script = "npx sass --style=compressed --no-source-map assets/entry.sass dist/style.css"
+[tasks.copy-asset-css]
+script_runner="@duckscript"
+script = "glob_cp yew-wgpu-web-prototype/**/*.css dist"
 private = true
 
 
 [tasks.copy-html]
 script_runner="@duckscript"
-script = "glob_cp assets/**/*.html dist"
+script = "glob_cp yew-wgpu-web-prototype/**/*.html dist"
 private = true
 category = "Build"
 
 
 [tasks.build-files]
-run_task = { name = ["build-rust", "build-sass", "copy-html"], parallel = true }
+run_task = { name = ["build-rust", "copy-asset-css", "copy-html"], parallel = true }
 private = true
 category = "Build"
 
 
 [tasks.watch-rust]
 script = """
-npx -c "chokidar "**/*.rs" -c \\"cargo make --allow-private build-rust\\""
+npx -c "sane \\"cargo make --allow-private build-rust\\" --glob=\"**/*.rs\"  --ignored=target/**/* --only-changes -p"
 """
 private = true
 category = "Build"
 
-[tasks.watch-sass]
+[tasks.watch-wgsl]
 script = """
-npx -c "chokidar "assets/*.sass" -c \\"cargo make --allow-private build-sass\\""
+npx -c "sane \\"cargo make --allow-private build-rust\\" --glob=\"**/*.wgsl\" --ignored=target/**/* --only-changes -p"
+"""
+private = true
+category = "Build"
+
+[tasks.watch-asset-css]
+script = """
+npx -c "sane  \\"cargo make --allow-private copy-asset-css\\" yew-wgpu-web-prototype/ --glob=\"**/*.css\" --only-changes -p"
 """
 private = true
 category = "Build"
 
 [tasks.watch-html]
 script = """
-npx -c "chokidar "assets/*.html" -c \\"cargo make --allow-private copy-html\\""
+npx -c "sane \\"cargo make --allow-private copy-html\\" yew-wgpu-web-prototype/ --glob=\"**/*.html\" --only-changes -p"
 """
 private = true
 category = "Build"
@@ -99,13 +112,13 @@ category = "Build"
 [tasks.watch]
 category = "Build"
 [tasks.watch.run_task]
-name = ["watch-rust", "watch-sass", "watch-html"]
+name = ["watch-rust", "watch-wgsl", "watch-asset-css", "watch-html"]
 parallel = true
 
 
 [tasks.start-server]
 script = """
-npx -c "browser-sync dist -w --index ./index.html --port 80 -b Chrome"
+npx -c "browser-sync start -s dist -f dist -w --index ./index.html --port 80 --no-open"
 """
 private = true
 category = "Build"

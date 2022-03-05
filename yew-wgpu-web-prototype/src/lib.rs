@@ -31,6 +31,7 @@ fn my_app() -> Html {
                 <WgpuCanvas<MyCanvasApp> {props} />
             </div>
             <RgbSlider {color} {onchange} />
+            <ColorPicker />
         </>
     }
 }

@@ -1,0 +1,26 @@
+@charset "UTF-8";
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  border: 0;
+}
+
+* {
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+#root,
+#__next {
+  isolation: isolate;
+}

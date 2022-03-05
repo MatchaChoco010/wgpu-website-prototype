@@ -1,6 +1,9 @@
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+mod color_picker;
+pub use color_picker::*;
+
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub onchange: Callback<vek::Rgba<f32>>,
