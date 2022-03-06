@@ -60,11 +60,21 @@ impl<App: WgpuCanvasApp + 'static> Reducible for AppReducer<App> {
 
 #[derive(Properties)]
 pub struct Props<App: WgpuCanvasApp + 'static> {
+    #[prop_or(true)]
+    pub animated: bool,
     pub props: App::Props,
 }
 impl<App: WgpuCanvasApp + 'static> PartialEq for Props<App> {
     fn eq(&self, other: &Self) -> bool {
         self.props == other.props
+    }
+}
+impl<App: WgpuCanvasApp + 'static> Clone for Props<App> {
+    fn clone(&self) -> Self {
+        Self {
+            animated: self.animated,
+            props: self.props.clone(),
+        }
     }
 }
 
@@ -108,24 +118,22 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
     let id = *id;
 
     // Element Size Changed
-    let size = use_state(WgpuCanvasSize::default);
     #[cfg(web_sys_unstable_apis)]
     {
         use wasm_bindgen::prelude::*;
         use wasm_bindgen::JsCast;
 
         let canvas_ref = canvas_ref.clone();
-        use_effect_with_deps(
-            {
-                let reducer = reducer.clone();
-                let size = size.clone();
+        {
+            let reducer = reducer.clone();
+            let animated = props.animated;
+            use_effect_with_deps(
                 move |canvas_ref: &NodeRef| {
                     let canvas = canvas_ref
                         .cast::<web_sys::Element>()
                         .unwrap_or_else(|| panic!("Failed to get canvas element"));
                     let f = Closure::wrap(Box::new({
                         let canvas_ref = canvas_ref.clone();
-                        let size_state = size.clone();
                         move || {
                             let canvas = canvas_ref
                                 .cast::<web_sys::Element>()
@@ -133,69 +141,92 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
                             let rect = canvas.get_bounding_client_rect();
                             let size =
                                 WgpuCanvasSize::new(rect.width() as u32, rect.height() as u32);
-                            size_state.set(size);
-                            reducer.dispatch(AppAction::AppResized(size))
+                            reducer.dispatch(AppAction::AppResized(size));
+                            if !animated {
+                                reducer.dispatch(AppAction::Render(0.0));
+                            }
                         }
                     }) as Box<dyn FnMut()>);
                     let observer =
                         web_sys::ResizeObserver::new(f.as_ref().unchecked_ref()).unwrap();
                     observer.observe(&canvas);
                     f.forget();
-                    move || {
-                        observer.disconnect();
-                        size.set(WgpuCanvasSize::default());
-                    }
-                }
-            },
-            canvas_ref,
-        );
-    };
+                    move || observer.disconnect()
+                },
+                canvas_ref,
+            );
+        };
+    }
 
     // Initialize App
-    let app_initialize_handle = use_async_once({
-        let size = size.clone();
-        || async move {
-            Rc::new(RefCell::new(
-                App::new(WgpuCanvasWindow::new(id, *size)).future.await,
-            ))
-        }
-    });
-    use_effect_with_deps(
+    {
+        let app_initialize_handle = {
+            let reducer = reducer.clone();
+            use_async_once({
+                || async move {
+                    Rc::new(RefCell::new(
+                        App::new(WgpuCanvasWindow::new(id, reducer.size))
+                            .future
+                            .await,
+                    ))
+                }
+            })
+        };
         {
             let reducer = reducer.clone();
-            let size = size.clone();
-            move |handle: &UseAsyncOnceHandle<Rc<RefCell<App>>>| {
-                if let UseAsyncOnceState::Ready(app) = handle.state() {
-                    reducer.dispatch(AppAction::AppInitialized(app.clone(), *size));
-                }
-                || ()
-            }
-        },
-        app_initialize_handle,
-    );
+            use_effect_with_deps(
+                move |handle: &UseAsyncOnceHandle<Rc<RefCell<App>>>| {
+                    if let UseAsyncOnceState::Ready(app) = handle.state() {
+                        reducer.dispatch(AppAction::AppInitialized(app.clone(), reducer.size));
+                        reducer.dispatch(AppAction::Render(0.0));
+                    }
+                    || ()
+                },
+                app_initialize_handle,
+            );
+        }
+    }
 
     // Register Animation Callback
-    let animation_handle = use_mut_ref(|| None);
-    let handle = request_animation_frame({
+    {
         let reducer = reducer.clone();
-        move |delta| reducer.dispatch(AppAction::Render(delta))
-    });
-    *animation_handle.borrow_mut() = Some(handle);
+        let animated = props.animated;
+        use_effect(move || {
+            let mut handle = if animated {
+                Some(request_animation_frame(move |delta| {
+                    reducer.dispatch(AppAction::Render(delta))
+                }))
+            } else {
+                None
+            };
+            move || {
+                if let Some(handle) = handle.take() {
+                    drop(handle)
+                }
+            }
+        });
+    }
 
     // Update props
-    use_effect_with_deps(
-        move |state| {
-            reducer.dispatch(AppAction::StateChanged(state.clone()));
-            || ()
-        },
-        props.props.clone(),
-    );
+    {
+        let reducer = reducer.clone();
+        use_effect_with_deps(
+            move |state| {
+                reducer.dispatch(AppAction::StateChanged(state.props.clone()));
+                if !state.animated {
+                    reducer.dispatch(AppAction::Render(0.0));
+                }
+                || ()
+            },
+            props.clone(),
+        );
+    }
 
     html! {
         <canvas
             data-raw-handle={id.to_string()}
-            width={size.width.to_string()}
-            height={size.height.to_string()}
+            width={reducer.size.width.to_string()}
+            height={reducer.size.height.to_string()}
             ref={canvas_ref}/>
     }
 }

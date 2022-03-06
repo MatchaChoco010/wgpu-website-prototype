@@ -28,10 +28,10 @@ fn my_app() -> Html {
     html! {
         <>
             <div id="resize-canvas">
-                <WgpuCanvas<MyCanvasApp> {props} />
+                <WgpuCanvas<MyCanvasApp> {props} animated={false}/>
             </div>
-            <RgbSlider {color} {onchange} />
-            <ColorPicker />
+            <RgbSlider {color} {onchange}/>
+            <ColorPicker/>
         </>
     }
 }
