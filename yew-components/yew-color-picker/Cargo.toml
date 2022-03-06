@@ -10,6 +10,7 @@ description = "Color Picker for Yew using WebGPU"
 bytemuck = { version="1.7.3", features = ["derive"]}
 log = "0.4.14"
 vek = "0.15.6"
+wasm-bindgen = "0.2.79"
 web-sys = { version = "0.3.56", features = [
   "DomRect",
   "Element",

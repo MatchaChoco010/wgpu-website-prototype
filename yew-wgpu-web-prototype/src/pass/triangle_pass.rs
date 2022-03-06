@@ -118,9 +118,12 @@ impl TrianglePass {
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: (self.clear_color.r as f64).powf(1.0 / 2.2),
-                        g: (self.clear_color.g as f64).powf(1.0 / 2.2),
-                        b: (self.clear_color.b as f64).powf(1.0 / 2.2),
+                        r: (self.clear_color.r as f64).powf(1.0 / 2.2)
+                            * (self.clear_color.a as f64),
+                        g: (self.clear_color.g as f64).powf(1.0 / 2.2)
+                            * (self.clear_color.a as f64),
+                        b: (self.clear_color.b as f64).powf(1.0 / 2.2)
+                            * (self.clear_color.a as f64),
                         a: (self.clear_color.a as f64),
                     }),
                     store: true,

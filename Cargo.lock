@@ -2879,6 +2879,7 @@ dependencies = [
  "bytemuck",
  "log",
  "vek",
+ "wasm-bindgen",
  "web-sys",
  "wgpu",
  "yew",

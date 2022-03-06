@@ -34,7 +34,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
       vec4<f32>(0.5, 0.5, 0.5, 1.0),
       checker);
 
-    let w_alpha = mix(color.rgb, background.rgb, color.a);
+    let w_alpha = mix(background.rgb, color.rgb, color.a);
     let wo_alpha = color.rgb;
 
     let t = floor(in.position.x * 2.0);
