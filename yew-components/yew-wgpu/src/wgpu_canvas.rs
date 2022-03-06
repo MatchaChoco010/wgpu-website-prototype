@@ -174,10 +174,12 @@ pub fn wgpu_canvas<App: WgpuCanvasApp + 'static>(props: &Props<App>) -> Html {
         };
         {
             let reducer = reducer.clone();
+            let props = props.props.clone();
             use_effect_with_deps(
                 move |handle: &UseAsyncOnceHandle<Rc<RefCell<App>>>| {
                     if let UseAsyncOnceState::Ready(app) = handle.state() {
                         reducer.dispatch(AppAction::AppInitialized(app.clone(), reducer.size));
+                        reducer.dispatch(AppAction::StateChanged(props));
                         reducer.dispatch(AppAction::Render(0.0));
                     }
                     || ()

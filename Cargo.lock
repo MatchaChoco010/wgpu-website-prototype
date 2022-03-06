@@ -2876,12 +2876,14 @@ dependencies = [
 name = "yew-color-picker"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "log",
  "vek",
  "web-sys",
  "wgpu",
  "yew",
  "yew-style-in-rs",
+ "yew-wgpu",
 ]
 
 [[package]]
@@ -2961,5 +2963,6 @@ dependencies = [
  "wgpu",
  "yew",
  "yew-color-picker",
+ "yew-style-in-rs",
  "yew-wgpu",
 ]
