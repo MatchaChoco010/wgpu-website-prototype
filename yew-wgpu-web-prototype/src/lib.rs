@@ -1,4 +1,4 @@
-use yew_color_picker::*;
+use yew_components::*;
 use yew_style_in_rs::*;
 use yew_wgpu::*;
 

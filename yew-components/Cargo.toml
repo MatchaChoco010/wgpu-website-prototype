@@ -1,10 +1,10 @@
 [package]
-name = "yew-color-picker"
+name = "yew-components"
 version = "0.1.0"
 edition = "2021"
 authors = ["Orito Itsuki"]
 license = "MIT OR Apache-2.0"
-description = "Color Picker for Yew using WebGPU"
+description = "Components for Yew"
 
 [dependencies]
 bytemuck = { version="1.7.3", features = ["derive"]}

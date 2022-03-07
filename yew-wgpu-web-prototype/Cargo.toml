@@ -20,6 +20,6 @@ web-sys = "0.3.56"
 wee_alloc = "0.4.5"
 wgpu = "0.12.0"
 yew = "0.19.3"
-yew-color-picker = { path = "../yew-components/yew-color-picker" }
+yew-components = { path = "../yew-components" }
 yew-style-in-rs = "0.1.0"
-yew-wgpu = { path = "../yew-components/yew-wgpu" }
+yew-wgpu = { path = "../yew-wgpu" }
