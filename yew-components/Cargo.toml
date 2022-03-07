@@ -14,6 +14,9 @@ wasm-bindgen = "0.2.79"
 web-sys = { version = "0.3.56", features = [
   "DomRect",
   "Element",
+  "Touch",
+  "TouchEvent",
+  "TouchList",
   "ResizeObserver",
 ]}
 wgpu = "0.12.0"

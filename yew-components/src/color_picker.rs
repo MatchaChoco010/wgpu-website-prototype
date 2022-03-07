@@ -26,8 +26,8 @@ pub fn color_picker(props: &Props) -> Html {
 
     let css = css!(
         r#"
-        width: 64px;
-        height: 32px;
+        width: 32px;
+        height: 16px;
 
         & > label {
             width: 100%;
@@ -42,13 +42,13 @@ pub fn color_picker(props: &Props) -> Html {
             & > canvas {
                 width: 100%;
                 height: 100%;
+                display: block;
                 background: #0e0e0e;
-                border: 4px #0e0e0e solid;
                 border-radius: 8px;
             }
         }
 
-        & > div {
+        & > .hover {
             position: relative;
             top: 16px;
             left: -128px;
@@ -56,23 +56,27 @@ pub fn color_picker(props: &Props) -> Html {
             height: 128px;
             background: #1f1f1f;
             border-radius: 8px;
+            z-index: 10;
             display: flex;
             opacity: 0;
+            visibility: hidden;
             filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
             transition: all 0.5s;
 
             &:before {
                 content: "";
                 position: absolute;
-                top: -24px;
-                left: 160px;
+                top: -12px;
+                left: 148px;
                 margin-left: -15px;
                 border: 12px solid transparent;
+                border-top: 0;
                 border-bottom: 12px solid #1f1f1f;
             }
 
             &.show {
                 opacity: 1;
+                visibility: visible;
                 filter: drop-shadow(0 20px 10px rgba(0, 0, 0, .7));
             }
 
@@ -107,7 +111,7 @@ pub fn color_picker(props: &Props) -> Html {
                     & input[type="number"] {
                         border: none;
                         background: #ccc;
-                        border-radius: 4px;
+                        border-radius: 8px;
                         width: 48px;
                         margin-left: 8px;
                         text-align: right;
@@ -125,8 +129,8 @@ pub fn color_picker(props: &Props) -> Html {
     html! {
         <div class={css}>
             <label>
-                <input type="checkbox" oninput={onchange_toggle}/>
                 <WgpuCanvas<ToggleApp> animated=true props={toggle_props}/>
+                <input type="checkbox" oninput={onchange_toggle}/>
             </label>
             <div class={classes!("hover", display)}>
                 <canvas/>

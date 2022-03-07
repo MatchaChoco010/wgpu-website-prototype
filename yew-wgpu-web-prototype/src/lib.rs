@@ -26,10 +26,13 @@ fn my_app() -> Html {
 
     let props = MyCanvasAppProps { clear_color: color };
 
+    let slider_value_state = use_state(|| 0.0);
+    let slider_value = *slider_value_state;
+
     let resize_canvas_css = css!(
         "
-        width: 150px;
-        height: 150px;
+        width: 400px;
+        height: 200px;
         overflow: hidden;
         resize: both;
 
@@ -41,25 +44,57 @@ fn my_app() -> Html {
     );
     let css = css!(
         "
-        display: flex;
-        align-items: center;
-        padding: 1rem;
+        width: 100%;
+        height: 100%;
+        padding: 16px;
+        background: #101010;
 
-        & > div {
-            font-size: 1.2rem;
+        & > :not(:first-child) {
+            margin-top: 32px;
+        }
+
+        & .layout-column {
+            display: flex;
+            flex-direction: column;
+
+            & > :not(:first-child) {
+                margin-top: 16px;
+            }
+        }
+
+        & .layout-row {
+            display: flex;
+            align-items: center;
+            flex-direction: row;
+
+            & > :not(:first-child) {
+                margin-left: 12px;
+            }
+        }
+
+        & .controls {
+            width: 256px;
+            color: #eee;
+            font-size: 1rem;
         }
         "
     );
     html! {
-        <>
+        <div class={css}>
             <div class={resize_canvas_css}>
                 <WgpuCanvas<MyCanvasApp> {props} animated={false}/>
             </div>
-            <div class={css}>
-                <div>{"Background Color: "}</div>
-                <ColorPicker {color} {onchange}/>
+            <div class="layout-column">
+                <div class="layout-row controls">
+                    <div>{"Background Color: "}</div>
+                    <ColorPicker {color} {onchange}/>
+                </div>
+                <div class="layout-row controls">
+                    <Slider min={-1.0} max={2.0} value={slider_value}
+                        onchange={Callback::from(move |v| slider_value_state.set(v))}/>
+                </div>
             </div>
-        </>
+        </div>
     }
 }
 
