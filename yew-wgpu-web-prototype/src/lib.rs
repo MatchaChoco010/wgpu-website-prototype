@@ -90,7 +90,7 @@ fn my_app() -> Html {
                     <ColorPicker {color} {onchange}/>
                 </div>
                 <div class="layout-row controls">
-                    <Slider min={-1.0} max={2.0} value={slider_value}
+                    <Slider min={-1.0} max={2.0} step={0.01} value={slider_value}
                         onchange={Callback::from(move |v| slider_value_state.set(v))}/>
                 </div>
             </div>
