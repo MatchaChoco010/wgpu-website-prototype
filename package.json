@@ -14,6 +14,6 @@
   "homepage": "https://github.com/MatchaChoco010/wgpu-website-prototype#readme",
   "devDependencies": {
     "browser-sync": "^2.27.7",
-    "sane": "^5.0.1"
+    "chokidar-cli": "^3.0.0"
   }
 }

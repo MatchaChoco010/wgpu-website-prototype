@@ -83,28 +83,28 @@ category = "Build"
 
 [tasks.watch-rust]
 script = """
-npx -c "sane \\"cargo make --allow-private build-rust\\" --glob=\"**/*.rs\"  --ignored=target/**/* --only-changes -p"
+npx -c "chokidar \"**/*.rs\" -c \\"cargo make --allow-private build-rust\\""
 """
 private = true
 category = "Build"
 
 [tasks.watch-wgsl]
 script = """
-npx -c "sane \\"cargo make --allow-private build-rust\\" --glob=\"**/*.wgsl\" --ignored=target/**/* --only-changes -p"
+npx -c "chokidar \"**/*.wgsl\" -c \\"cargo make --allow-private build-rust\\""
 """
 private = true
 category = "Build"
 
 [tasks.watch-asset-css]
 script = """
-npx -c "sane  \\"cargo make --allow-private copy-asset-css\\" yew-wgpu-web-prototype/ --glob=\"**/*.css\" --only-changes -p"
+npx -c "chokidar \"yew-wgpu-web-prototype/**/*.css\" -c \\"cargo make --allow-private copy-asset-css\\""
 """
 private = true
 category = "Build"
 
 [tasks.watch-html]
 script = """
-npx -c "sane \\"cargo make --allow-private copy-html\\" yew-wgpu-web-prototype/ --glob=\"**/*.html\" --only-changes -p"
+npx -c "chokidar \"yew-wgpu-web-prototype/**/*.html\" -c \\"cargo make --allow-private copy-html\\""
 """
 private = true
 category = "Build"
