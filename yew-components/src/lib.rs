@@ -1,5 +1,5 @@
-mod normal_slider;
-pub use normal_slider::*;
+mod slider;
+pub use slider::*;
 
 mod color_picker;
 pub use color_picker::*;
