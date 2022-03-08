@@ -34,8 +34,7 @@ pub fn slider(props: &Props) -> Html {
 
     let rate = ((props.value - props.min) / (props.max - props.min)).clamp(0.0, 1.0);
     let percentage = rate * 100.0;
-    let css = css!(
-        r#"
+    let css = css! {r#"
         width: 100%;
         flex-grow: 1;
         display: flex;
@@ -119,8 +118,7 @@ pub fn slider(props: &Props) -> Html {
                 appearance: none;
             }
         }
-    "#
-    );
+    "#};
     let dynamic_css = dynamic_css!(format! {r#"
         & .track::after {{
             width: {percentage}%;

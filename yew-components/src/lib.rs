@@ -1,5 +1,10 @@
+mod util;
+
 mod slider;
 pub use slider::*;
+
+mod hsv_palette;
+pub use hsv_palette::*;
 
 mod color_picker;
 pub use color_picker::*;
