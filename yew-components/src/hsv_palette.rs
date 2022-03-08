@@ -27,10 +27,6 @@ pub fn hsv_palettel<
 >(
     props: &Props<T>,
 ) -> Html {
-    let div_ref = use_node_ref();
-    let onmousemove_closure_state: Rc<RefCell<Option<Closure<dyn Fn(MouseEvent)>>>> =
-        use_mut_ref(|| None);
-
     let app_props = HsvPaletteProps { color: props.color };
     let hsl = crate::util::linear_rgb_to_hsl(props.color.rgb());
     let hsv = crate::util::linear_rgb_to_hsv(props.color.rgb());
@@ -44,8 +40,58 @@ pub fn hsv_palettel<
     let edge_s = edge * hsv.y;
     let edge_v = edge * hsv.z;
 
+    let div_ref = use_node_ref();
+    let palette_handle_ref = use_node_ref();
+    let transition_flag_ref = use_mut_ref(|| false);
+    let transition_state = use_state(|| "");
+    let deg_current_ref = use_mut_ref(|| h);
+    let onmousemove_closure_state: Rc<RefCell<Option<Closure<dyn Fn(MouseEvent)>>>> =
+        use_mut_ref(|| None);
+
+    use_effect_with_deps(
+        {
+            let palette_handle_ref = palette_handle_ref.clone();
+            let transition_flag_ref = transition_flag_ref.clone();
+            move |_| {
+                let palette_handle = palette_handle_ref.cast::<HtmlElement>().unwrap();
+                {
+                    let transition_flag_ref = transition_flag_ref.clone();
+                    let transition_start = Closure::wrap(Box::new(move || {
+                        *transition_flag_ref.borrow_mut() = true;
+                    }) as Box<dyn Fn()>);
+                    palette_handle
+                        .add_event_listener_with_callback(
+                            "transitionstart",
+                            transition_start.as_ref().unchecked_ref(),
+                        )
+                        .unwrap();
+                    transition_start.forget();
+                }
+                {
+                    let transition_flag_ref = transition_flag_ref.clone();
+                    let transition_end = Closure::wrap(Box::new(move || {
+                        *transition_flag_ref.borrow_mut() = false;
+                    }) as Box<dyn Fn()>);
+                    palette_handle
+                        .add_event_listener_with_callback(
+                            "transitionend",
+                            transition_end.as_ref().unchecked_ref(),
+                        )
+                        .unwrap();
+                    transition_end.forget();
+                }
+                || ()
+            }
+        },
+        (),
+    );
+
     let onmousedown = {
         let div_ref = div_ref.clone();
+        let palette_handle_ref = palette_handle_ref.clone();
+        let transition_flag_ref = transition_flag_ref.clone();
+        let transition_state = transition_state.clone();
+        let deg_current_ref = deg_current_ref.clone();
         let onmousemove_closure_state = onmousemove_closure_state.clone();
         let onchange = props.onchange.clone();
         let h = h;
@@ -53,8 +99,15 @@ pub fn hsv_palettel<
         let v = hsv.z;
         let a = props.color.a;
         Callback::from(move |evt: MouseEvent| {
+            let deg_current_ref = deg_current_ref.clone();
+            let palette_handle_ref = palette_handle_ref.clone();
+            let transition_flag_ref = transition_flag_ref.clone();
+            let transition_state = transition_state.clone();
+
             evt.prevent_default();
             evt.stop_propagation();
+
+            transition_state.set("transition: all 0.5s;");
 
             let client_x = evt.client_x() as f64;
             let client_y = evt.client_y() as f64;
@@ -154,8 +207,43 @@ pub fn hsv_palettel<
 
             let onmouseup_closure = {
                 let onmousemove_closure_state = onmousemove_closure_state.clone();
+                let transition_flag_ref = transition_flag_ref.clone();
+                let transition_state = transition_state.clone();
                 Closure::wrap(Box::new(move |evt: MouseEvent| {
+                    let palette_handle_ref = palette_handle_ref.clone();
+                    let deg_current_ref = deg_current_ref.clone();
+                    let transition_state = transition_state.clone();
+
                     evt.prevent_default();
+
+                    if !*transition_flag_ref.borrow() {
+                        let deg_current_normalized = (*deg_current_ref.borrow()
+                            + T::from_f64(360.0).unwrap())
+                            % T::from_f64(360.0).unwrap();
+                        *deg_current_ref.borrow_mut() = deg_current_normalized;
+                        transition_state.set("");
+                    } else {
+                        let mut once_option = AddEventListenerOptions::new();
+                        once_option.once(true);
+                        let palette_handle = palette_handle_ref.cast::<HtmlElement>().unwrap();
+                        let transition_end = Closure::wrap(Box::new(move || {
+                            let deg_current_normalized = (*deg_current_ref.borrow()
+                                + T::from_f64(360.0).unwrap())
+                                % T::from_f64(360.0).unwrap();
+                            *deg_current_ref.borrow_mut() = deg_current_normalized;
+                            transition_state.set("");
+                        })
+                            as Box<dyn Fn()>);
+                        palette_handle
+                            .add_event_listener_with_callback_and_add_event_listener_options(
+                                "transitionend",
+                                transition_end.as_ref().unchecked_ref(),
+                                &once_option,
+                            )
+                            .unwrap();
+                        transition_end.forget();
+                    }
+
                     let document = web_sys::window().and_then(|w| w.document()).unwrap();
                     if let Some(closure) = onmousemove_closure_state.borrow_mut().take() {
                         document
@@ -183,6 +271,19 @@ pub fn hsv_palettel<
         })
     };
 
+    let current_deg = *deg_current_ref.borrow();
+    let deg_delta = if (h - current_deg + T::from_f64(180.0).unwrap()).is_sign_positive() {
+        (h - current_deg + T::from_f64(180.0).unwrap()) % T::from_f64(360.0).unwrap()
+            - T::from_f64(180.0).unwrap()
+    } else {
+        (h - current_deg + T::from_f64(180.0).unwrap()) % T::from_f64(360.0).unwrap()
+            + T::from_f64(180.0).unwrap()
+    };
+    let deg = current_deg + deg_delta;
+    *deg_current_ref.borrow_mut() = deg;
+
+    let transition = *transition_state;
+
     let css = css! {"
         width: 128px;
         height: 128px;
@@ -208,7 +309,6 @@ pub fn hsv_palettel<
             border: 1px solid #eeee;
             border-radius: 50%;
             filter: drop-shadow(0 0 6px rgba(0, 0, 0, .9));
-            transition: all 0.5s;
         }
 
         & > .palette-handle {
@@ -230,7 +330,8 @@ pub fn hsv_palettel<
     let dynamic_css = dynamic_css! {format!{r#"
         & > .ring-handle {{
             background: hsl({h}, 100%, 50%);
-            transform: rotate({h}deg) translate(0, {radius});
+            transform: rotate({deg}deg) translate(0, {radius});
+            {transition}
         }}
         & > .palette-handle {{
             background: hsl({h}, {s_percentage}%, {l_percentage}%);
@@ -241,7 +342,7 @@ pub fn hsv_palettel<
         <div class={classes!(css, dynamic_css)} ref={div_ref} {onmousedown}>
             <WgpuCanvas<HsvPaletteApp<T>> animated=false props={app_props}/>
             <div class="ring-handle"/>
-            <div class="palette-handle"/>
+            <div class="palette-handle" ref={palette_handle_ref}/>
         </div>
     }
 }
