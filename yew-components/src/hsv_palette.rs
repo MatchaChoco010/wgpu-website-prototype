@@ -1,3 +1,4 @@
+use gloo::timers::callback::Timeout;
 use num::traits::FromPrimitive;
 use num::Float;
 use std::fmt::Display;
@@ -43,7 +44,7 @@ pub fn hsv_palettel<
     let div_ref = use_node_ref();
     let palette_handle_ref = use_node_ref();
     let transition_flag_ref = use_mut_ref(|| false);
-    let transition_state = use_state(|| "");
+    let transition_state = use_state(|| "transition: all 0.5s;");
     let deg_current_ref = use_mut_ref(|| h);
     let onmousemove_closure_state: Rc<RefCell<Option<Closure<dyn Fn(MouseEvent)>>>> =
         use_mut_ref(|| None);
@@ -222,6 +223,10 @@ pub fn hsv_palettel<
                             % T::from_f64(360.0).unwrap();
                         *deg_current_ref.borrow_mut() = deg_current_normalized;
                         transition_state.set("");
+                        let timeout = Timeout::new(10, move || {
+                            transition_state.set("transition: all 0.5s;");
+                        });
+                        timeout.forget();
                     } else {
                         let mut once_option = AddEventListenerOptions::new();
                         once_option.once(true);
@@ -232,6 +237,11 @@ pub fn hsv_palettel<
                                 % T::from_f64(360.0).unwrap();
                             *deg_current_ref.borrow_mut() = deg_current_normalized;
                             transition_state.set("");
+                            let transition_state = transition_state.clone();
+                            let timeout = Timeout::new(10, move || {
+                                transition_state.set("transition: all 0.5s;");
+                            });
+                            timeout.forget();
                         })
                             as Box<dyn Fn()>);
                         palette_handle

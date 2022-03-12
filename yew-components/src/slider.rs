@@ -106,7 +106,7 @@ pub fn slider(props: &Props) -> Html {
             border: none;
             background: #ccc;
             border-radius: 8px;
-            width: 64px;
+            width: 96px;
             height: 16px;
             margin-left: 8px;
             text-align: center;

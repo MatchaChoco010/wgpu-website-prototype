@@ -51,7 +51,7 @@ fn my_app() -> Html {
     let css = css!(
         "
         width: 100%;
-        height: 100%;
+        min-height: 100%;
         padding: 16px;
         background: #101010;
 
@@ -96,26 +96,10 @@ fn my_app() -> Html {
                         onchange={Callback::from(move |v| slider_value_state.set(v))}/>
                 </div>
                 <div class="layout-row controls">
-                    <ColorSlider<f32> value={color_slider_value}
-                        color_start={vek::Rgba::new(0.0, 0.0, 0.0, 0.0)}
-                        color_end={vek::Rgba::new(1.0, 0.5, 0.0, 1.0)}
-                        onchange={Callback::from(move |v| color_slider_value_state.set(v))}/>
-                </div>
-                <div class="layout-row controls">
-                    <ColorSlider<f32> value={color_slider_value}
-                        color_start={vek::Rgba::new(0.0, 0.0, 0.0, 1.0)}
-                        color_end={vek::Rgba::new(1.0, 1.0, 1.0, 1.0)}
-                        linear=false/>
-                </div>
-                <div class="layout-row controls">
-                    <HueSlider value={hue_slider_value}
-                        onchange={Callback::from(move |v| hue_slider_value_state.set(v))}/>
-                </div>
-                <div class="layout-row controls">
                     <RgbaSliders<f32> {color} onchange={onchange.clone()}/>
                 </div>
                 <div class="layout-row controls">
-                    <RgbaSliders<f32> {color} onchange={onchange.clone()} alpha=false/>
+                    <HsvaSliders<f32> {color} onchange={onchange.clone()}/>
                 </div>
                 <div class="layout-row controls">
                     <HsvPalette<f32> {color} onchange={onchange.clone()}/>

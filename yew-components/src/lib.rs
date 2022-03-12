@@ -12,6 +12,9 @@ pub use hue_slider::*;
 mod rgba_sliders;
 pub use rgba_sliders::*;
 
+mod hsva_sliders;
+pub use hsva_sliders::*;
+
 mod hsv_palette;
 pub use hsv_palette::*;
 
