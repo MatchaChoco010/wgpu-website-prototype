@@ -1,33 +1,24 @@
-use num::traits::AsPrimitive;
-use num::Float;
-use vek::ColorComponent;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_style_in_rs::*;
 use yew_wgpu::*;
 
-mod color_slider_track_app;
-use color_slider_track_app::*;
+mod hue_slider_track_app;
+use hue_slider_track_app::*;
 
 #[derive(Properties, PartialEq)]
-pub struct Props<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> {
+pub struct Props {
     #[prop_or_default]
     pub onchange: Callback<f64>,
     #[prop_or(None)]
     pub step: Option<f64>,
     #[prop_or(0.0)]
     pub value: f64,
-    pub color_start: vek::Rgba<T>,
-    pub color_end: vek::Rgba<T>,
-    #[prop_or(true)]
-    pub linear: bool,
 }
 
-#[function_component(ColorSlider)]
-pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod>(
-    props: &Props<T>,
-) -> Html {
+#[function_component(HueSlider)]
+pub fn hue_slider(props: &Props) -> Html {
     let oninput = {
         let onchange = props.onchange.clone();
         Callback::from(move |evt: InputEvent| {
@@ -41,29 +32,9 @@ pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod
         })
     };
 
-    let truck_props = ColorSliderTrackProps {
-        color_start: props.color_start,
-        color_end: props.color_end,
-        linear: props.linear,
-    };
-
-    let color = if props.linear {
-        vek::Rgba::lerp(
-            props.color_start.map(|x| x.as_()),
-            props.color_end.map(|x| x.as_()),
-            props.value as f32,
-        )
-    } else {
-        let color_start = props.color_start.map(|x| x.as_().powf(1.0 / 2.2));
-        let color_end = props.color_end.map(|x| x.as_().powf(1.0 / 2.2));
-        vek::Rgba::lerp(color_start, color_end, props.value as f32).map(|x| x.powf(2.2))
-    };
-    let r = color.r * 255.0;
-    let g = color.g * 255.0;
-    let b = color.b * 255.0;
-
-    let rate = props.value;
+    let rate = props.value / 360.0;
     let percentage = rate * 100.0;
+    let h = rate * 360.0;
     let css = css! {r#"
         width: 100%;
         flex-grow: 1;
@@ -140,23 +111,21 @@ pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod
     let dynamic_css = dynamic_css!(format! {r#"
         & .handle {{
             left: calc({percentage}% - 12px * {rate});
-            background: rgb({r}, {g}, {b});
+            background: hsl({h}, 100%, 50%);
         }}
     "#});
 
     html! {
         <div class={classes!(css, dynamic_css)}>
             <div class="slider">
-                <WgpuCanvas<ColorSliderTrackApp<T>> animated=false props={truck_props}/>
+                <WgpuCanvas<HueSliderTrackApp> animated=false props={()}/>
                 <div class="handle"/>
-                <input type="range"
-                    min="0" max="1"
+                <input type="range"  min="0" max="360"
                     step={props.step.map(|step| step.to_string())}
                     value={props.value.to_string()}
                     oninput={oninput.clone()}/>
             </div>
-            <input type="number"
-                min="0" max="1"
+            <input type="number" min="0" max="360"
                 step={props.step.map(|step| step.to_string())}
                 value={props.value.to_string()}
                 {oninput}/>

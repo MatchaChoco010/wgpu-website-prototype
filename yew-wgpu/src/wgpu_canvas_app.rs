@@ -68,5 +68,5 @@ pub trait WgpuCanvasApp: Sized {
     type Props: PartialEq + Clone + Default;
     fn new(canvas_window: WgpuCanvasWindow) -> WgpuCanvasAppCreator<Self>;
     fn update(&mut self, delta_time: f64, size: &WgpuCanvasSize);
-    fn update_props(&mut self, update: &Self::Props);
+    fn update_props(&mut self, _props: &Self::Props) {}
 }

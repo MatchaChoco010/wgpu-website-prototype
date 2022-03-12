@@ -1,7 +1,3 @@
-use num::traits::AsPrimitive;
-use num::Float;
-use std::marker::PhantomData;
-use vek::ColorComponent;
 use wgpu::util::DeviceExt;
 use yew_wgpu::*;
 
@@ -39,44 +35,7 @@ const VERTICES: &[Vertex] = &[
 ];
 const INDICES: &[u16] = &[0, 2, 1, 1, 2, 3];
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct ColorSliderTruckUniform {
-    pub color_start: [f32; 4],
-    pub color_end: [f32; 4],
-    pub resolution: [f32; 2],
-    pub linear: u32, // boolean
-}
-impl Default for ColorSliderTruckUniform {
-    fn default() -> Self {
-        Self {
-            color_start: [0.0, 0.0, 0.0, 0.0],
-            color_end: [0.0, 0.0, 0.0, 0.0],
-            resolution: [1.0, 1.0],
-            linear: 1,
-        }
-    }
-}
-
-#[derive(Clone, PartialEq)]
-pub struct ColorSliderTruckProps<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> {
-    pub color_start: vek::Rgba<T>,
-    pub color_end: vek::Rgba<T>,
-    pub linear: bool,
-}
-impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> Default
-    for ColorSliderTruckProps<T>
-{
-    fn default() -> Self {
-        Self {
-            color_start: vek::Rgba::black(),
-            color_end: vek::Rgba::white(),
-            linear: true,
-        }
-    }
-}
-
-pub struct ColorSliderTruckApp<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> {
+pub struct HueSliderTrackApp {
     _instance: wgpu::Instance,
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -86,18 +45,10 @@ pub struct ColorSliderTruckApp<T: Float + AsPrimitive<f32> + ColorComponent + by
 
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    uniform_buffer: wgpu::Buffer,
-    bind_group: wgpu::BindGroup,
     render_pipeline: wgpu::RenderPipeline,
-
-    uniform: ColorSliderTruckUniform,
-
-    _marker: PhantomData<fn() -> T>,
 }
-impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
-    for ColorSliderTruckApp<T>
-{
-    type Props = ColorSliderTruckProps<T>;
+impl WgpuCanvasApp for HueSliderTrackApp {
+    type Props = ();
 
     fn new(canvas_window: WgpuCanvasWindow) -> WgpuCanvasAppCreator<Self> {
         WgpuCanvasAppCreator::new(async move {
@@ -137,9 +88,7 @@ impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
 
             let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
                 label: Some("Shader"),
-                source: wgpu::ShaderSource::Wgsl(
-                    include_str!("color_slider_truck_app.wgsl").into(),
-                ),
+                source: wgpu::ShaderSource::Wgsl(include_str!("hue_slider_track_app.wgsl").into()),
             });
 
             let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -153,38 +102,10 @@ impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
                 usage: wgpu::BufferUsages::INDEX,
             });
 
-            let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Uniform Buffer"),
-                contents: bytemuck::cast_slice(&[ColorSliderTruckUniform::default()]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            });
-            let bind_group_layout =
-                device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    entries: &[wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    }],
-                    label: Some("bind_group_layout"),
-                });
-            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &bind_group_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: uniform_buffer.as_entire_binding(),
-                }],
-                label: Some("bind_group"),
-            });
-
             let render_pipeline_layout =
                 device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&bind_group_layout],
+                    bind_group_layouts: &[],
                     push_constant_ranges: &[],
                 });
 
@@ -233,13 +154,7 @@ impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
 
                 vertex_buffer,
                 index_buffer,
-                uniform_buffer,
-                bind_group,
                 render_pipeline,
-
-                uniform: ColorSliderTruckUniform::default(),
-
-                _marker: PhantomData,
             }
         })
     }
@@ -250,7 +165,6 @@ impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
             self.config.width = size.width;
             self.config.height = size.height;
             self.surface.configure(&self.device, &self.config);
-            self.uniform.resolution = [size.width as f32, size.height as f32];
         }
 
         let output = self.surface.get_current_texture().unwrap();
@@ -258,12 +172,6 @@ impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-
-        self.queue.write_buffer(
-            &self.uniform_buffer,
-            0,
-            bytemuck::cast_slice(&[self.uniform]),
-        );
 
         let mut encoder = self
             .device
@@ -291,7 +199,6 @@ impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..6, 0, 0..1);
@@ -299,11 +206,5 @@ impl<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> WgpuCanvasApp
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
-    }
-
-    fn update_props(&mut self, props: &Self::Props) {
-        self.uniform.color_start = props.color_start.map(|x| x.as_()).into_array();
-        self.uniform.color_end = props.color_end.map(|x| x.as_()).into_array();
-        self.uniform.linear = if props.linear { 1 } else { 0 };
     }
 }
