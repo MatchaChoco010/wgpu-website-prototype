@@ -29,6 +29,9 @@ fn my_app() -> Html {
     let slider_value_state = use_state(|| 0.0);
     let slider_value = *slider_value_state;
 
+    let color_slider_value_state = use_state(|| 0.5);
+    let color_slider_value = *color_slider_value_state;
+
     let resize_canvas_css = css!(
         "
         width: 400px;
@@ -88,6 +91,18 @@ fn my_app() -> Html {
                 <div class="layout-row controls">
                     <Slider min={-1.0} max={2.0} step={0.01} value={slider_value}
                         onchange={Callback::from(move |v| slider_value_state.set(v))}/>
+                </div>
+                <div class="layout-row controls">
+                    <ColorSlider<f32> step={0.01} value={color_slider_value}
+                        color_start={vek::Rgba::new(0.0, 0.0, 0.0, 1.0)}
+                        color_end={vek::Rgba::new(1.0, 1.0, 1.0, 1.0)}
+                        onchange={Callback::from(move |v| color_slider_value_state.set(v))}/>
+                </div>
+                <div class="layout-row controls">
+                    <ColorSlider<f32> step={0.01} value={color_slider_value}
+                        color_start={vek::Rgba::new(0.0, 0.0, 0.0, 1.0)}
+                        color_end={vek::Rgba::new(1.0, 1.0, 1.0, 1.0)}
+                        linear=false/>
                 </div>
                 <div class="layout-row controls">
                     <HsvPalette<f32> {color} onchange={onchange.clone()}/>

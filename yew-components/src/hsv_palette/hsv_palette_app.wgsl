@@ -62,7 +62,7 @@ fn gamma_rgb_to_hsv(rgb: vec3<f32>) -> vec3<f32> {
     } else if (cmax == rgb.b) {
         h = 60.0 * ((rgb.r - rgb.g) / delta + 4.0);
     }
-    var s: f32;;
+    var s: f32;
     if (cmax == 0.0) {
         s = 0.0;
     } else {

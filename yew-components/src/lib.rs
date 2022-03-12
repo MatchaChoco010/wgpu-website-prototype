@@ -3,6 +3,9 @@ mod util;
 mod slider;
 pub use slider::*;
 
+mod color_slider;
+pub use color_slider::*;
+
 mod hsv_palette;
 pub use hsv_palette::*;
 

@@ -1,1 +1,1 @@
-@charset "UTF-8";*,::after,::before{box-sizing:border-box;scroll-behavior:smooth;border:0}*{margin:0}body,html{height:100%}body{-webkit-font-smoothing:antialiased}#__next,#root{isolation:isolate}
+@charset "UTF-8";*,::after,::before{box-sizing:border-box;scroll-behavior:smooth;border:0}*{margin:0}body,html{height:100%}body{-webkit-font-smoothing:antialiased;font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans',Meiryo,sans-serif}#__next,#root{isolation:isolate}
