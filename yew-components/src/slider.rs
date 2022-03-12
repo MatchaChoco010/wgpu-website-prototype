@@ -11,8 +11,6 @@ pub struct Props {
     pub min: f64,
     #[prop_or(1.0)]
     pub max: f64,
-    #[prop_or(None)]
-    pub step: Option<f64>,
     #[prop_or(0.0)]
     pub value: f64,
 }
@@ -136,15 +134,15 @@ pub fn slider(props: &Props) -> Html {
                 <input type="range"
                     min={props.min.to_string()}
                     max={props.max.to_string()}
-                    step={props.step.map(|step| step.to_string())}
-                    value={props.value.to_string()}
+                    step="0.01"
+                    value={format!("{:.2}", props.value)}
                     oninput={oninput.clone()}/>
             </div>
             <input type="number"
                 min={props.min.to_string()}
                 max={props.max.to_string()}
-                step={props.step.map(|step| step.to_string())}
-                value={props.value.to_string()}
+                step="0.01"
+                value={format!("{:.2}", props.value)}
                 {oninput}/>
         </div>
     }

@@ -14,21 +14,21 @@ use color_slider_track_app::*;
 pub struct Props<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod> {
     #[prop_or_default]
     pub onchange: Callback<f64>,
-    #[prop_or(None)]
-    pub step: Option<f64>,
     #[prop_or(0.0)]
     pub value: f64,
     pub color_start: vek::Rgba<T>,
     pub color_end: vek::Rgba<T>,
     #[prop_or(true)]
     pub linear: bool,
+    #[prop_or(false)]
+    pub disable: bool,
 }
 
 #[function_component(ColorSlider)]
 pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod>(
     props: &Props<T>,
 ) -> Html {
-    let oninput = {
+    let oninput = if !props.disable {
         let onchange = props.onchange.clone();
         Callback::from(move |evt: InputEvent| {
             let value = evt
@@ -39,7 +39,12 @@ pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod
                 .unwrap_or_default();
             onchange.emit(value);
         })
+    } else {
+        Callback::from(|_| ())
     };
+
+    let disable_class = if props.disable { Some("disable") } else { None };
+    let disable = if props.disable { Some("true") } else { None };
 
     let truck_props = ColorSliderTrackProps {
         color_start: props.color_start,
@@ -77,6 +82,17 @@ pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod
             flex-grow: 1;
             position: relative;
 
+            & > .track {
+                width: 100%;
+                height: 8px;
+                position: absolute;
+                margin: auto;
+                top: 0;
+                bottom: 0;
+                border-radius: 4px;
+                display: none;
+            }
+
             & > canvas{
                 width: 100%;
                 height: 8px;
@@ -99,6 +115,13 @@ pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod
                 filter: drop-shadow(0 0 6px rgba(0, 0, 0, .9));
                 transition: all 0.5s;
             }
+        }
+
+        & .number {
+            position: relative;
+            width: 64px;
+            height: 16px;
+            margin-left: 8px;
         }
 
         & input[type="range"] {
@@ -128,13 +151,54 @@ pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod
             border-radius: 8px;
             width: 64px;
             height: 16px;
-            margin-left: 8px;
+            position: absolute;
+            top: 0;
             text-align: center;
             display: block;
 
             &::-webkit-outer-spin-button, &::-webkit-inner-spin-button {
                 appearance: none;
             }
+        }
+
+        & .input-cover {
+            border-radius: 8px;
+            width: 64px;
+            height: 16px;
+            position: absolute;
+            top: 0;
+            z-index: 1;
+            display: none;
+        }
+
+        &.disable .slider {
+            & > .track {
+                display: block;
+                background: rgba(128, 128, 128, 0.8);
+            }
+
+            & .handle {
+                border: 1px solid #333e;
+
+                &::before {
+                    content: "";
+                    width: 100%;
+                    height: 100%;
+                    margin: auto;
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(128, 128, 128, 0.8);
+                }
+            }
+
+            & .handle {
+                filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+            }
+        }
+
+        &.disable .number .input-cover {
+            display: block;
+            background: rgba(128, 128, 128, 0.8);
         }
     "#};
     let dynamic_css = dynamic_css!(format! {r#"
@@ -145,21 +209,21 @@ pub fn color_slider<T: Float + AsPrimitive<f32> + ColorComponent + bytemuck::Pod
     "#});
 
     html! {
-        <div class={classes!(css, dynamic_css)}>
+        <div class={classes!(css, dynamic_css, disable_class)}>
             <div class="slider">
                 <WgpuCanvas<ColorSliderTrackApp<T>> animated=false props={truck_props}/>
+                <div class="track"/>
                 <div class="handle"/>
-                <input type="range"
-                    min="0" max="1"
-                    step={props.step.map(|step| step.to_string())}
-                    value={props.value.to_string()}
+                <input type="range" min="0" max="1" step="0.01" {disable}
+                    value={format!("{:.2}", props.value)}
                     oninput={oninput.clone()}/>
             </div>
-            <input type="number"
-                min="0" max="1"
-                step={props.step.map(|step| step.to_string())}
-                value={props.value.to_string()}
-                {oninput}/>
+            <div class="number">
+                <input type="number" min="0" max="1" step="0.01" {disable}
+                    value={format!("{:.2}", props.value)}
+                    {oninput}/>
+                <div class="input-cover"/>
+            </div>
         </div>
     }
 }

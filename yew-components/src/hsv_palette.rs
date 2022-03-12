@@ -1,5 +1,5 @@
+use num::traits::FromPrimitive;
 use num::Float;
-use num_traits::FromPrimitive;
 use std::fmt::Display;
 use vek::ColorComponent;
 use wasm_bindgen::prelude::*;

@@ -9,6 +9,9 @@ pub use color_slider::*;
 mod hue_slider;
 pub use hue_slider::*;
 
+mod rgba_sliders;
+pub use rgba_sliders::*;
+
 mod hsv_palette;
 pub use hsv_palette::*;
 

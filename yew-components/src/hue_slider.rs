@@ -11,8 +11,6 @@ use hue_slider_track_app::*;
 pub struct Props {
     #[prop_or_default]
     pub onchange: Callback<f64>,
-    #[prop_or(None)]
-    pub step: Option<f64>,
     #[prop_or(0.0)]
     pub value: f64,
 }
@@ -120,14 +118,12 @@ pub fn hue_slider(props: &Props) -> Html {
             <div class="slider">
                 <WgpuCanvas<HueSliderTrackApp> animated=false props={()}/>
                 <div class="handle"/>
-                <input type="range"  min="0" max="360"
-                    step={props.step.map(|step| step.to_string())}
-                    value={props.value.to_string()}
+                <input type="range"  min="0" max="360" step="1"
+                    value={format!("{:.0}", props.value)}
                     oninput={oninput.clone()}/>
             </div>
-            <input type="number" min="0" max="360"
-                step={props.step.map(|step| step.to_string())}
-                value={props.value.to_string()}
+            <input type="number" min="0" max="360" step="1"
+                value={format!("{:.0}", props.value)}
                 {oninput}/>
         </div>
     }
