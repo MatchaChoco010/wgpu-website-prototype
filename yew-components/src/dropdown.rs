@@ -107,6 +107,7 @@ pub fn dropdown(props: &Props) -> Html {
             position: absolute;
             top: -1px;
             left: -1px;
+            z-index: 10;
             background: #ccc;
             border: 1px solid #ccc;
             border-radius: 8px;

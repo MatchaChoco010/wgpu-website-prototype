@@ -109,6 +109,7 @@ pub fn hsva_sliders<
 
         & span {
             display: block;
+            color: #ccc;
             font-size: 12px;
             width: 12px;
             margin: auto;

@@ -41,7 +41,7 @@ pub fn hsv_palettel<
     let edge_s = edge * hsv.y;
     let edge_v = edge * hsv.z;
 
-    let div_ref = use_node_ref();
+    let canvas_ref = use_node_ref();
     let palette_handle_ref = use_node_ref();
     let transition_flag_ref = use_mut_ref(|| false);
     let transition_state = use_state(|| "transition: all 0.5s;");
@@ -88,7 +88,7 @@ pub fn hsv_palettel<
     );
 
     let onmousedown = {
-        let div_ref = div_ref.clone();
+        let canvas_ref = canvas_ref.clone();
         let palette_handle_ref = palette_handle_ref.clone();
         let transition_flag_ref = transition_flag_ref.clone();
         let transition_state = transition_state.clone();
@@ -112,7 +112,7 @@ pub fn hsv_palettel<
 
             let client_x = evt.client_x() as f64;
             let client_y = evt.client_y() as f64;
-            let div = div_ref.cast::<HtmlElement>().unwrap();
+            let div = canvas_ref.cast::<HtmlElement>().unwrap();
             let rect = div.get_bounding_client_rect();
             let pos = vek::Vec2::new(client_x - rect.left(), client_y - rect.top());
             let pos = pos - vek::Vec2::one() * 64.0;
@@ -130,13 +130,13 @@ pub fn hsv_palettel<
                 onchange.emit(rgba);
 
                 let onmousemove_palette_closure = {
-                    let div_ref = div_ref.clone();
+                    let canvas_ref = canvas_ref.clone();
                     let onchange = onchange.clone();
                     Closure::wrap(Box::new(move |evt: MouseEvent| {
                         evt.prevent_default();
                         let client_x = evt.client_x() as f64;
                         let client_y = evt.client_y() as f64;
-                        let div = div_ref.cast::<HtmlElement>().unwrap();
+                        let div = canvas_ref.cast::<HtmlElement>().unwrap();
                         let rect = div.get_bounding_client_rect();
                         let pos = vek::Vec2::new(client_x - rect.left(), client_y - rect.top());
                         let pos = pos - vek::Vec2::one() * 64.0;
@@ -163,7 +163,7 @@ pub fn hsv_palettel<
                 *onmousemove_closure_state.borrow_mut() = Some(onmousemove_palette_closure);
             }
 
-            if 0.82 < magnitude && magnitude < 0.98 {
+            if 0.82 < magnitude && magnitude < 1.0 {
                 let rad = (-pos.y).atan2(pos.x);
                 let deg = (-rad.to_degrees() - 90.0 + 360.0) % 360.0;
                 let s = s;
@@ -174,13 +174,13 @@ pub fn hsv_palettel<
                 onchange.emit(rgba);
 
                 let onmousemove_ring_closure = {
-                    let div_ref = div_ref.clone();
+                    let canvas_ref = canvas_ref.clone();
                     let onchange = onchange.clone();
                     Closure::wrap(Box::new(move |evt: MouseEvent| {
                         evt.prevent_default();
                         let client_x = evt.client_x() as f64;
                         let client_y = evt.client_y() as f64;
-                        let div = div_ref.cast::<HtmlElement>().unwrap();
+                        let div = canvas_ref.cast::<HtmlElement>().unwrap();
                         let rect = div.get_bounding_client_rect();
                         let pos = vek::Vec2::new(client_x - rect.left(), client_y - rect.top());
                         let pos = pos - vek::Vec2::one() * 64.0;
@@ -295,14 +295,21 @@ pub fn hsv_palettel<
     let transition = *transition_state;
 
     let css = css! {"
-        width: 128px;
-        height: 128px;
+        width: 140px;
+        height: 140px;
         position: relative;
+        border-radius: 50%;
+        background: #111;
 
         & > canvas {
-            width: 100%;
-            height: 100%;
+            width: 128px;
+            height: 128px;
             position: absolute;
+            margin: auto;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
             display: block;
         }
 
@@ -349,8 +356,8 @@ pub fn hsv_palettel<
         }}
     "#}};
     html! {
-        <div class={classes!(css, dynamic_css)} ref={div_ref} {onmousedown}>
-            <WgpuCanvas<HsvPaletteApp<T>> animated=false props={app_props}/>
+        <div class={classes!(css, dynamic_css)} {onmousedown}>
+            <WgpuCanvas<HsvPaletteApp<T>> ref={canvas_ref} animated=false props={app_props}/>
             <div class="ring-handle"/>
             <div class="palette-handle" ref={palette_handle_ref}/>
         </div>

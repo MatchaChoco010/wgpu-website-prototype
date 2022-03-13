@@ -95,6 +95,7 @@ pub fn rgba_sliders<
         & span {
             display: block;
             font-size: 12px;
+            color: #ccc;
             width: 12px;
             margin: auto;
             top: 0;

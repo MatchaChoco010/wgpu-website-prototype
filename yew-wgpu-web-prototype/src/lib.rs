@@ -1,3 +1,5 @@
+use wasm_bindgen::prelude::wasm_bindgen;
+use yew::prelude::*;
 use yew_components::*;
 use yew_style_in_rs::*;
 use yew_wgpu::*;
@@ -6,8 +8,6 @@ mod my_canvas_app;
 mod pass;
 
 use my_canvas_app::*;
-use wasm_bindgen::prelude::wasm_bindgen;
-use yew::prelude::*;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -29,29 +29,13 @@ fn my_app() -> Html {
     let slider_value_state = use_state(|| 0.0);
     let slider_value = *slider_value_state;
 
-    let list = vec!["item 0", "item 1", "item item item item item item"];
-    let list_value_state = use_state(|| 0);
-    let list_value = *list_value_state;
-
-    let resize_canvas_css = css!(
-        "
-        width: 400px;
-        height: 200px;
-        overflow: hidden;
-        resize: both;
-
-        & > canvas {
-            width: 100%;
-            height: 100%;
-        }
-        "
-    );
     let css = css!(
         "
         width: 100%;
         min-height: 100%;
         padding: 16px;
         background: #101010;
+        color: #ccc;
 
         & > :not(:first-child) {
             margin-top: 32px;
@@ -81,34 +65,43 @@ fn my_app() -> Html {
             color: #eee;
             font-size: 1rem;
         }
+
+        & .resize {
+            width: 400px;
+            height: 200px;
+            overflow: hidden;
+            resize: both;
+
+            & > canvas {
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        & .resize-elem {
+            width: 100px;
+            height: 12px;
+            overflow: hidden;
+            resize: both;
+        }
         "
     );
     html! {
         <div class={css}>
-            <div class={resize_canvas_css}>
+            <div class="resize">
                 <WgpuCanvas<MyCanvasApp> {props} animated={false}/>
             </div>
-            <div class="layout-column">
-                <div class="layout-row controls">
-                    <Slider min={-1.0} max={2.0} value={slider_value}
-                        onchange={Callback::from(move |v| slider_value_state.set(v))}/>
-                </div>
-                <div class="layout-row controls">
-                    <RgbaSliders<f32> {color} onchange={onchange.clone()}/>
-                </div>
-                <div class="layout-row controls">
-                    <HsvaSliders<f32> {color} onchange={onchange.clone()}/>
-                </div>
-                <div class="layout-row controls">
-                    <HsvPalette<f32> {color} onchange={onchange.clone()}/>
-                </div>
-                <div class="layout-row controls">
-                    <div>{"Background Color: "}</div>
-                    <ColorPicker {color} {onchange}/>
-                </div>
-                <div class="layout-row controls">
-                    <Dropdown {list} value={list_value}
-                        onchange={Callback::from(move|i| list_value_state.set(i))}/>
+            <div class="layout-row">
+                <div class="layout-column">
+                    <div class="layout-row controls">
+                        <Slider min={-1.0} max={2.0} value={slider_value}
+                            onchange={Callback::from(move |v| slider_value_state.set(v))}/>
+                    </div>
+                    <div class="layout-row">
+                        <div class="resize-elem"/>
+                        <div>{"Background Color: "}</div>
+                        <ColorPicker {color} {onchange}/>
+                    </div>
                 </div>
             </div>
         </div>
