@@ -29,11 +29,9 @@ fn my_app() -> Html {
     let slider_value_state = use_state(|| 0.0);
     let slider_value = *slider_value_state;
 
-    let color_slider_value_state = use_state(|| 0.5);
-    let color_slider_value = *color_slider_value_state;
-
-    let hue_slider_value_state = use_state(|| 120.0);
-    let hue_slider_value = *hue_slider_value_state;
+    let list = vec!["item 0", "item 1", "item item item item item item"];
+    let list_value_state = use_state(|| 0);
+    let list_value = *list_value_state;
 
     let resize_canvas_css = css!(
         "
@@ -107,6 +105,10 @@ fn my_app() -> Html {
                 <div class="layout-row controls">
                     <div>{"Background Color: "}</div>
                     <ColorPicker {color} {onchange}/>
+                </div>
+                <div class="layout-row controls">
+                    <Dropdown {list} value={list_value}
+                        onchange={Callback::from(move|i| list_value_state.set(i))}/>
                 </div>
             </div>
         </div>

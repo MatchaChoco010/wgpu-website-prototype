@@ -18,6 +18,9 @@ pub use hsva_sliders::*;
 mod hsv_palette;
 pub use hsv_palette::*;
 
+mod dropdown;
+pub use dropdown::*;
+
 mod color_picker;
 pub use color_picker::*;
 
